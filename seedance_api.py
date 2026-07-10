@@ -22,7 +22,8 @@ class SeedanceAPI:
             "Content-Type": "application/json"
         }
 
-    def text_to_video(self, prompt, aspect_ratio="16:9", duration=5, quality="basic", remove_watermark=False):
+    def text_to_video(self, prompt, aspect_ratio="16:9", duration=5, quality="basic", remove_watermark=False,
+                       generate_audio=True, camera_fixed=False, output_format="mp4"):
         """
         Submits a Seedance 2.5 Text-to-Video (T2V) generation task.
 
@@ -31,9 +32,13 @@ class SeedanceAPI:
                        from a completed create_character() call. Multiple characters supported.
                        Example: "@character:ab539e5f-... walks on the beach at sunset"
         :param aspect_ratio: Video aspect ratio (e.g., '16:9', '9:16').
-        :param duration: Video duration in seconds.
-        :param quality: Output quality ('basic' or 'high').
+        :param duration: Video duration in seconds. Seedance 2.5 supports up to 30s (up from 15s on 2.0).
+        :param quality: Output quality ('basic' or 'high'). 4K/1080p are not available at 2.5 launch — 480p/720p only.
         :param remove_watermark: Whether to remove the watermark.
+        :param generate_audio: Whether the video includes synchronized audio (voice/sfx/music). Default True.
+        :param camera_fixed: Whether to bias the model toward a fixed (non-moving) camera. Default False.
+        :param output_format: 'mp4' (default, standard color) or 'mov' (yuv444p, higher color fidelity —
+                              recommended when the output will be repeatedly extended/edited). Seedance 2.5 only.
         :return: JSON response from the Seedance 2.5 API.
         """
         endpoint = f"{self.base_url}/seedance-v2.0-t2v"
@@ -42,11 +47,15 @@ class SeedanceAPI:
             "aspect_ratio": aspect_ratio,
             "duration": duration,
             "quality": quality,
-            "remove_watermark": remove_watermark
+            "remove_watermark": remove_watermark,
+            "generate_audio": generate_audio,
+            "camera_fixed": camera_fixed,
+            "output_format": output_format
         }
         return self._post_request(endpoint, payload)
 
-    def image_to_video(self, prompt, images_list, aspect_ratio="16:9", duration=5, quality="basic", remove_watermark=False):
+    def image_to_video(self, prompt, images_list, aspect_ratio="16:9", duration=5, quality="basic", remove_watermark=False,
+                        generate_audio=True, camera_fixed=False, output_format="mp4"):
         """
         Submits a Seedance 2.5 Image-to-Video (I2V) generation task.
 
@@ -54,11 +63,16 @@ class SeedanceAPI:
                        @image1, @image2, etc. To inject a character from create_character(),
                        use @character:<id> inline — e.g. "@image1 shows the scene, @character:ab539e5f-... is the hero".
                        Characters are appended after images_list entries automatically.
-        :param images_list: A list of image URLs to animate.
+        :param images_list: A list of image URLs to animate. Seedance 2.5 accepts up to 30 reference
+                            images per request (up from 9 on 2.0).
         :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration.
-        :param quality: Output quality.
+        :param duration: Video duration. Seedance 2.5 supports up to 30s (up from 15s on 2.0).
+        :param quality: Output quality ('basic' or 'high'). 4K/1080p are not available at 2.5 launch — 480p/720p only.
         :param remove_watermark: Whether to remove the watermark.
+        :param generate_audio: Whether the video includes synchronized audio (voice/sfx/music). Default True.
+        :param camera_fixed: Whether to bias the model toward a fixed (non-moving) camera. Default False.
+        :param output_format: 'mp4' (default, standard color) or 'mov' (yuv444p, higher color fidelity —
+                              recommended when the output will be repeatedly extended/edited). Seedance 2.5 only.
         :return: JSON response from the Seedance 2.5 API.
         """
         endpoint = f"{self.base_url}/seedance-v2.0-i2v"
@@ -68,12 +82,16 @@ class SeedanceAPI:
             "aspect_ratio": aspect_ratio,
             "duration": duration,
             "quality": quality,
-            "remove_watermark": remove_watermark
+            "remove_watermark": remove_watermark,
+            "generate_audio": generate_audio,
+            "camera_fixed": camera_fixed,
+            "output_format": output_format
         }
         return self._post_request(endpoint, payload)
 
     def omni_reference(self, prompt, aspect_ratio="16:9", duration=5, quality="basic",
-                        images_list=None, video_files=None, audio_files=None):
+                        images_list=None, video_files=None, audio_files=None,
+                        generate_audio=True, camera_fixed=False, output_format="mp4"):
         """
         Submits a Seedance 2.5 Omni-Reference generation task.
 
@@ -84,10 +102,18 @@ class SeedanceAPI:
         :param prompt: Text prompt describing the video. Supports @character:<id> syntax.
         :param aspect_ratio: Video aspect ratio (e.g., '16:9', '9:16').
         :param duration: Video duration in seconds (minimum 4 s for video references).
-        :param quality: Output quality ('basic' or 'high').
-        :param images_list: Optional list of image URLs to condition on.
-        :param video_files: Optional list of video URLs to condition on.
-        :param audio_files: Optional list of audio URLs to condition on.
+                         Seedance 2.5 supports up to 30s (up from 15s on 2.0).
+        :param quality: Output quality ('basic' or 'high'). 4K/1080p are not available at 2.5 launch — 480p/720p only.
+        :param images_list: Optional list of image URLs to condition on. Seedance 2.5 accepts up to
+                            30 reference images (up from 9 on 2.0).
+        :param video_files: Optional list of video URLs to condition on. Seedance 2.5 accepts up to
+                           10 reference videos, each 2-30s, totaling <=30s (up from 3 videos/15s total on 2.0).
+        :param audio_files: Optional list of audio URLs to condition on. Seedance 2.5 accepts up to
+                           10 reference audio clips, each 2-30s, totaling <=30s (up from 3 clips/15s total on 2.0).
+        :param generate_audio: Whether the video includes synchronized audio (voice/sfx/music). Default True.
+        :param camera_fixed: Whether to bias the model toward a fixed (non-moving) camera. Default False.
+        :param output_format: 'mp4' (default, standard color) or 'mov' (yuv444p, higher color fidelity —
+                              recommended when the output will be repeatedly extended/edited). Seedance 2.5 only.
         :return: JSON response with request_id.
         """
         endpoint = f"{self.base_url}/seedance-2.0-omni-reference"
@@ -96,6 +122,9 @@ class SeedanceAPI:
             "aspect_ratio": aspect_ratio,
             "duration": duration,
             "quality": quality,
+            "generate_audio": generate_audio,
+            "camera_fixed": camera_fixed,
+            "output_format": output_format,
         }
         if images_list:
             payload["images_list"] = images_list
@@ -220,12 +249,16 @@ class SeedanceAPI:
             quality=quality,
         )
 
-    def extend_video(self, request_id, prompt="", duration=5, quality="basic"):
+    def extend_video(self, request_id, prompt="", duration=5, quality="basic", output_format="mp4"):
         """
         Extends a previously generated Seedance 2.5 video.
-        
+
         :param request_id: The ID of the video segment to extend.
         :param prompt: Optional text prompt for the extension.
+        :param duration: Extension duration in seconds. Combined output can reach 30s on Seedance 2.5.
+        :param output_format: 'mp4' or 'mov'. Use 'mov' (yuv444p + PCM audio) for repeated extensions —
+                              it avoids the color/brightness drift and audio desync that 'mp4' (yuv420p)
+                              accumulates across multiple re-encodes. Seedance 2.5 only.
         :return: JSON response from the Seedance 2.5 API.
         """
         endpoint = f"{self.base_url}/seedance-v2.0-extend"
@@ -233,20 +266,24 @@ class SeedanceAPI:
             "request_id": request_id,
             "prompt": prompt,
             "duration": duration,
-            "quality": quality
+            "quality": quality,
+            "output_format": output_format
         }
         return self._post_request(endpoint, payload)
 
-    def video_edit(self, prompt, video_urls, images_list=None, aspect_ratio="16:9", quality="basic", remove_watermark=False):
+    def video_edit(self, prompt, video_urls, images_list=None, aspect_ratio="16:9", quality="basic", remove_watermark=False,
+                    output_format="mp4"):
         """
         Submits a Seedance 2.5 Video-Edit generation task.
-        
+
         :param prompt: The text prompt describing the edit.
         :param video_urls: A list of video URLs to edit.
         :param images_list: Optional list of image URLs.
         :param aspect_ratio: Video aspect ratio.
-        :param quality: Output quality.
+        :param quality: Output quality. 4K/1080p are not available at 2.5 launch — 480p/720p only.
         :param remove_watermark: Whether to remove watermark.
+        :param output_format: 'mp4' (default) or 'mov' (yuv444p, higher color fidelity for multi-pass
+                              edits). Seedance 2.5 only.
         :return: JSON response from the Seedance 2.5 API.
         """
         endpoint = f"{self.base_url}/seedance-v2.0-video-edit"
@@ -256,7 +293,8 @@ class SeedanceAPI:
             "images_list": images_list or [],
             "aspect_ratio": aspect_ratio,
             "quality": quality,
-            "remove_watermark": remove_watermark
+            "remove_watermark": remove_watermark,
+            "output_format": output_format
         }
         return self._post_request(endpoint, payload)
 

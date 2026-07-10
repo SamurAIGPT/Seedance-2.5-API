@@ -11,7 +11,7 @@ The most comprehensive Python wrapper for the **Seedance 2.5 API** (developed by
 
 Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on using the Seedance 2.5 API.
 
-> 🌟 **Seedance 2.5** — native 4K, longer clips, advanced audio, and improved character consistency over Seedance 2.0. Try it now: [I2V Playground](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [T2V Playground](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
+> 🌟 **Seedance 2.5** — clips up to 30s (up from 15s), 30 reference images / 10 reference videos / 10 reference audio clips per request (up from 9/3/3), synced audio generation, fixed-camera control, and improved character consistency over Seedance 2.0. 480p/720p at launch — 1080p/4K are not yet available. Try it now: [I2V Playground](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [T2V Playground](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 ## Related Projects
 
@@ -24,25 +24,29 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 
 Seedance 2.5 is ByteDance's most advanced video generation model, offering unparalleled video quality and motion consistency.
 
-- **Cinematic Quality**: Generate up to native 4K AI videos with realistic physics and lighting.
+- **Longer Clips**: Generate up to 30 seconds per clip (up from 15s on Seedance 2.0).
 - **Realistic Human Faces**: Best-in-class facial fidelity — natural expressions, skin detail, and identity consistency across frames.
 - **Less Censorship**: More permissive content policy compared to other AI video models, enabling a wider range of creative use cases.
-- **Superior Motion Control**: Advanced camera movement and character consistency for professional results.
+- **Superior Motion Control**: Advanced camera movement (including a fixed-camera option) and character consistency for professional results.
 - **Multimodal API**: Supports Text-to-Video (T2V), Image-to-Video (I2V), and Video Extension.
 - **Developer-First**: Fast processing via the MuAPI infrastructure with a simple Python SDK.
 
 ## 🌟 Key Features of Seedance 2.5 API
 
 - ✅ **Realistic Human Face Generation**: Produces natural, high-fidelity human faces with accurate expressions, skin texture, and identity consistency — no uncanny valley.
-- ✅ **Seedance 2.5 Text-to-Video (T2V)**: Transform complex descriptive prompts into stunning AI video clips.
+- ✅ **Seedance 2.5 Text-to-Video (T2V)**: Transform complex descriptive prompts into stunning AI video clips, up to 30s long.
 - ✅ **Seedance 2.5 Image-to-Video (I2V)**: Animate any static image with precise motion control using `images_list`.
-- ✅ **Seedance 2.5 Omni-Reference**: Condition a video on any combination of image, video, and audio references in one request.
+- ✅ **Seedance 2.5 Omni-Reference**: Condition a video on any combination of image, video, and audio references in one request — up to 30 reference images, 10 reference videos, and 10 reference audio clips (up from 9/3/3 on Seedance 2.0).
 - ✅ **Seedance 2.5 Character**: Generate a multi-panel character sheet (front, back, side, action pose, expressions) from 1–3 reference photos. Use `@character:<id>` inline in any prompt, or pass the sheet directly as an anchor image for tighter face fidelity via `consistent_video()`.
 - ✅ **Seedance 2.5 Video-Edit**: Edit existing videos using text prompts and reference images for stylized results.
+- ✅ **Synced Audio Generation**: `generate_audio` produces voice, sound effects, and background music matched to the visuals — wrap dialogue in quotes for best results.
+- ✅ **Fixed-Camera Control**: `camera_fixed` biases the model toward a static, non-moving shot.
+- ✅ **High-Fidelity Output Format**: `output_format="mov"` (yuv444p + PCM audio) avoids the color drift and audio desync that accumulate across repeated extensions/edits with `mp4` — recommended whenever a clip will be extended or re-edited multiple times. Seedance 2.5 only.
 - ✅ **File Upload**: Directly upload local images and videos using the `upload_file` method, supporting seamless use in generation tasks.
-- ✅ **High-Resolution Output**: Support for `basic` and `high` (1080p+) quality settings.
 - ✅ **Less Censorship**: More permissive content policy than competing models — broader creative freedom out of the box.
-- ✅ **Flexible Aspect Ratios**: Optimized for `16:9`, `9:16` (TikTok/Reels), `4:3`, and `3:4`.
+- ✅ **Flexible Aspect Ratios**: Optimized for `16:9`, `9:16` (TikTok/Reels), `4:3`, `3:4`, `1:1`, and `21:9`.
+
+> **Resolution note**: Seedance 2.5 supports `480p` and `720p` at launch. `1080p` and `4K` are not yet available on this model.
 
 ---
 
@@ -282,17 +286,17 @@ For prompt engineering and advanced use cases, see [awesome-seedance-2.5-api-pro
 
 | Method | Parameters | Description |
 | :--- | :--- | :--- |
-| `text_to_video` | `prompt`, `aspect_ratio`, `duration`, `quality`, `remove_watermark` | Generate video from text. Supports `@character:<id>` in prompt. |
-| `image_to_video` | `prompt`, `images_list`, `aspect_ratio`, `duration`, `quality`, `remove_watermark` | Animate images. Supports `@image1`/`@character:<id>` in prompt. |
-| `omni_reference` | `prompt`, `aspect_ratio`, `duration`, `quality`, `images_list`, `video_files`, `audio_files` | Multi-modal reference video generation. |
+| `text_to_video` | `prompt`, `aspect_ratio`, `duration`, `quality`, `remove_watermark`, `generate_audio`, `camera_fixed`, `output_format` | Generate video from text, up to 30s. Supports `@character:<id>` in prompt. |
+| `image_to_video` | `prompt`, `images_list`, `aspect_ratio`, `duration`, `quality`, `remove_watermark`, `generate_audio`, `camera_fixed`, `output_format` | Animate images. Supports `@image1`/`@character:<id>` in prompt. |
+| `omni_reference` | `prompt`, `aspect_ratio`, `duration`, `quality`, `images_list`, `video_files`, `audio_files`, `generate_audio`, `camera_fixed`, `output_format` | Multi-modal reference video generation — up to 30 images / 10 videos / 10 audio clips. |
 | `create_character` | `images_list` (1–3), `outfit_description`, `character_name` | Generate a 4K character sheet from reference photos. Returns `request_id`; `outputs[0]` is the sheet URL. |
 | `consistent_video` | `sheet_url`, `prompt`, `aspect_ratio`, `duration`, `quality`, `extra_images` | I2V with the character sheet as anchor (`@image1`). Tighter face fidelity than `@character:<id>`. |
-| `video_edit` | `prompt`, `video_urls`, `images_list`, `aspect_ratio`, `quality`, `remove_watermark` | Edit existing videos with prompts and images. |
+| `video_edit` | `prompt`, `video_urls`, `images_list`, `aspect_ratio`, `quality`, `remove_watermark`, `output_format` | Edit existing videos with prompts and images. |
 | `watermark_remover`| `video_url` | Remove MuAPI watermark from a Seedance video. |
 | `watermark_remover_pro`| `video_url` | Remove MuAPI watermark from a Seedance video (Pro version). |
 | `text_to_video_480p`| `prompt`, `aspect_ratio`, `duration`, `quality` | Generate a 480p video from text (faster/cheaper). |
 | `image_to_video_480p`| `prompt`, `images_list`, `aspect_ratio`, `duration`, `quality` | Generate a 480p video from an image (faster/cheaper). |
-| `extend_video` | `request_id`, `prompt`, `duration`, `quality` | Extend an existing Seedance video segment. |
+| `extend_video` | `request_id`, `prompt`, `duration`, `quality`, `output_format` | Extend an existing Seedance video segment, up to a combined 30s. |
 | `upload_file` | `file_path` | Upload a local file (image or video) to MuAPI for use in generation tasks. |
 | `get_result` | `request_id` | Check task status for the Seedance API. |
 | `wait_for_completion` | `request_id`, `poll_interval`, `timeout` | Blocking helper for Seedance generation tasks. |
