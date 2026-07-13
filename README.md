@@ -13,6 +13,10 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 
 > 🌟 **Seedance 2.5** — clips up to 30s (up from 15s), 30 reference images / 10 reference videos / 10 reference audio clips per request (up from 9/3/3), synced audio generation, fixed-camera control, and improved character consistency over Seedance 2.0. 480p/720p at launch — 1080p/4K are not yet available. Try it now: [I2V Playground](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [T2V Playground](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
+## 📺 Video Tutorial
+
+[**How to Access Seedance 2.5 API (Step-by-Step Guide)**](https://www.youtube.com/watch?v=Uszlw7H4VP4) — a full walkthrough of getting an API key and making your first Seedance 2.5 call via [MuAPI](https://muapi.ai/seedance-2.5?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api).
+
 ## Related Projects
 
 - [seedance-2.0-watermark-remover](https://github.com/SamurAIGPT/seedance-2.0-watermark-remover) — Remove watermarks from your Seedance generated videos
