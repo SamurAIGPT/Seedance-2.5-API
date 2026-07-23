@@ -25,6 +25,7 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 - [seedance-2-generator](https://github.com/SamurAIGPT/seedance-2-generator) — Ready-made Next.js SaaS built on Seedance 2
 - [Seedance-2-API](https://github.com/Anil-matcha/Seedance-2-API) — Python wrapper covering Seedance 2.0 and Seedance 2 Mini
 - [awesome-seedance-2.5-api-prompts](https://github.com/Anil-matcha/awesome-seedance-2.5-api-prompts) — Curated Seedance 2.5 API guide, prompts, camera controls, and video generation examples
+- [flux-3-video-api](https://github.com/SamurAIGPT/flux-3-video-api) — Python wrapper for Black Forest Labs' FLUX 3 Text-to-Video and Image-to-Video
 
 ## 🚀 Why Use Seedance 2.5 API?
 
