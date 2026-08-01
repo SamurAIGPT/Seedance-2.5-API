@@ -40,6 +40,35 @@ def image_to_video(prompt: str, image_url: str, aspect_ratio: str = "16:9", dura
     return json.dumps(result, indent=2)
 
 @mcp.tool()
+def spicy_text_to_video(prompt: str, aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
+    """
+    Generate a 720p video from a text prompt using Seedance 2.5 Spicy (relaxed content moderation).
+
+    :param prompt: Descriptive text prompt.
+    :param aspect_ratio: Video aspect ratio.
+    :param duration: Duration in seconds, 4-30.
+    :param seed: Optional int seed for reproducible generation.
+    """
+    api = get_api()
+    result = api.spicy_text_to_video(prompt, aspect_ratio, duration, seed)
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+def spicy_image_to_video(prompt: str, image_url: str, aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
+    """
+    Animate a single image into a 720p video using Seedance 2.5 Spicy (relaxed content moderation).
+
+    :param prompt: Text prompt guiding the animation.
+    :param image_url: URL of the image to animate.
+    :param aspect_ratio: Video aspect ratio.
+    :param duration: Duration in seconds, 4-30.
+    :param seed: Optional int seed for reproducible generation.
+    """
+    api = get_api()
+    result = api.spicy_image_to_video(prompt, image_url, aspect_ratio, duration, seed)
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
 def first_last_frame(prompt: str, images_list: list[str], aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
     """
     Generate a smooth 720p transition between a start and end image using Seedance 2.5.

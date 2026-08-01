@@ -64,6 +64,54 @@ class SeedanceAPI:
             payload["seed"] = seed
         return self._post_request(endpoint, payload)
 
+    def spicy_text_to_video(self, prompt, aspect_ratio="16:9", duration=5, seed=None):
+        """
+        Submits a Seedance 2.5 Spicy Text-to-Video generation task at 720p.
+
+        Spicy is the relaxed-moderation sibling of the flagship T2V model — same
+        720p pipeline and pricing, more permissive content policy. No 480p tier.
+
+        :param prompt: The text prompt describing the video.
+        :param aspect_ratio: Video aspect ratio.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
+        :return: JSON response from the Seedance 2.5 API.
+        """
+        endpoint = f"{self.base_url}/seedance-2.5-spicy-text-to-video"
+        payload = {
+            "prompt": prompt,
+            "aspect_ratio": aspect_ratio,
+            "duration": duration,
+        }
+        if seed is not None:
+            payload["seed"] = seed
+        return self._post_request(endpoint, payload)
+
+    def spicy_image_to_video(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None):
+        """
+        Submits a Seedance 2.5 Spicy Image-to-Video generation task at 720p.
+
+        Spicy is the relaxed-moderation sibling of the flagship I2V model — same
+        720p pipeline and pricing, more permissive content policy. No 480p tier.
+
+        :param prompt: Text prompt to guide the animation.
+        :param image_url: URL of the single image to animate.
+        :param aspect_ratio: Video aspect ratio.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
+        :return: JSON response from the Seedance 2.5 API.
+        """
+        endpoint = f"{self.base_url}/seedance-2.5-spicy-image-to-video"
+        payload = {
+            "prompt": prompt,
+            "image_url": image_url,
+            "aspect_ratio": aspect_ratio,
+            "duration": duration,
+        }
+        if seed is not None:
+            payload["seed"] = seed
+        return self._post_request(endpoint, payload)
+
     def first_last_frame(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None):
         """
         Submits a Seedance 2.5 First & Last Frame generation task at 720p.

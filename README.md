@@ -157,6 +157,11 @@ curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-image-t
   }'
 ```
 
+### 2b. Seedance 2.5 Spicy (T2V / I2V)
+**Endpoints**: `POST https://api.muapi.ai/api/v1/seedance-2.5-spicy-text-to-video` · `POST https://api.muapi.ai/api/v1/seedance-2.5-spicy-image-to-video` ($0.60/sec, 720p only — no 480p tier)
+
+Relaxed-moderation siblings of the flagship T2V/I2V models — same request shape, same pricing, more permissive content policy.
+
 ### 3. Seedance 2.5 First & Last Frame
 **Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame` ($0.60/sec, 720p)
 **480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame-480p` ($0.30/sec)
@@ -294,6 +299,8 @@ For prompt engineering and advanced use cases, see [awesome-seedance-2.5-api-pro
 | `text_to_video_480p` | `prompt`, `aspect_ratio`, `duration`, `seed` | 480p tier — faster/cheaper. |
 | `image_to_video` | `prompt`, `image_url`, `aspect_ratio`, `duration`, `seed` | Animate a single image at 720p. |
 | `image_to_video_480p` | `prompt`, `image_url`, `aspect_ratio`, `duration`, `seed` | 480p tier — faster/cheaper. |
+| `spicy_text_to_video` | `prompt`, `aspect_ratio`, `duration`, `seed` | Relaxed-moderation T2V at 720p. No 480p tier. |
+| `spicy_image_to_video` | `prompt`, `image_url`, `aspect_ratio`, `duration`, `seed` | Relaxed-moderation I2V at 720p. No 480p tier. |
 | `first_last_frame` | `prompt`, `images_list` (exactly 2), `aspect_ratio`, `duration`, `seed` | Keyframe transition between a start and end image at 720p. |
 | `first_last_frame_480p` | `prompt`, `images_list` (exactly 2), `aspect_ratio`, `duration`, `seed` | 480p tier — faster/cheaper. |
 | `omni_reference` | `prompt`, `aspect_ratio`, `duration`, `images_list`, `videos_list`, `audios_list`, `seed` | Multi-modal reference video generation at 720p — up to 20 images / 6 videos / 6 audio clips. |
