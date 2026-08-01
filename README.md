@@ -11,7 +11,7 @@ The most comprehensive Python wrapper for the **Seedance 2.5 API** (developed by
 
 Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on using the Seedance 2.5 API.
 
-> 🌟 **Seedance 2.5** — clips up to 30s (up from 15s), 30 reference images / 10 reference videos / 10 reference audio clips per request (up from 9/3/3), synced audio generation, fixed-camera control, and improved character consistency over Seedance 2.0. 480p/720p at launch — 1080p/4K are not yet available. Try it now: [I2V Playground](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [T2V Playground](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
+> 🌟 **Seedance 2.5** ships as 8 early-access endpoints — Text-to-Video, Image-to-Video, First & Last Frame, and Omni-Reference, each with a 720p and a 480p tier. Clips up to 30s (up from 15s on 2.0). Omni-Reference accepts up to 20 reference images / 6 reference videos / 6 reference audio clips (up from 9/3/3 on Seedance 2.0). 480p/720p at launch — 1080p/4K are not yet available. Try it now: [I2V Playground](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [T2V Playground](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 ## 📺 Video Tutorial
 
@@ -34,26 +34,26 @@ Seedance 2.5 is ByteDance's most advanced video generation model, offering unpar
 - **Longer Clips**: Generate up to 30 seconds per clip (up from 15s on Seedance 2.0).
 - **Realistic Human Faces**: Best-in-class facial fidelity — natural expressions, skin detail, and identity consistency across frames.
 - **Less Censorship**: More permissive content policy compared to other AI video models, enabling a wider range of creative use cases.
-- **Superior Motion Control**: Advanced camera movement (including a fixed-camera option) and character consistency for professional results.
-- **Multimodal API**: Supports Text-to-Video (T2V), Image-to-Video (I2V), and Video Extension.
+- **Superior Motion Control**: Advanced camera movement and improved character consistency for professional results.
+- **Multimodal API**: Supports Text-to-Video (T2V), Image-to-Video (I2V), First & Last Frame keyframe transitions, and Omni-Reference.
 - **Developer-First**: Fast processing via the MuAPI infrastructure with a simple Python SDK.
 
 ## 🌟 Key Features of Seedance 2.5 API
 
 - ✅ **Realistic Human Face Generation**: Produces natural, high-fidelity human faces with accurate expressions, skin texture, and identity consistency — no uncanny valley.
 - ✅ **Seedance 2.5 Text-to-Video (T2V)**: Transform complex descriptive prompts into stunning AI video clips, up to 30s long.
-- ✅ **Seedance 2.5 Image-to-Video (I2V)**: Animate any static image with precise motion control using `images_list`.
-- ✅ **Seedance 2.5 Omni-Reference**: Condition a video on any combination of image, video, and audio references in one request — up to 30 reference images, 10 reference videos, and 10 reference audio clips (up from 9/3/3 on Seedance 2.0).
-- ✅ **Seedance 2.5 Character**: Generate a multi-panel character sheet (front, back, side, action pose, expressions) from 1–3 reference photos. Use `@character:<id>` inline in any prompt, or pass the sheet directly as an anchor image for tighter face fidelity via `consistent_video()`.
-- ✅ **Seedance 2.5 Video-Edit**: Edit existing videos using text prompts and reference images for stylized results.
-- ✅ **Synced Audio Generation**: `generate_audio` produces voice, sound effects, and background music matched to the visuals — wrap dialogue in quotes for best results.
-- ✅ **Fixed-Camera Control**: `camera_fixed` biases the model toward a static, non-moving shot.
-- ✅ **High-Fidelity Output Format**: `output_format="mov"` (yuv444p + PCM audio) avoids the color drift and audio desync that accumulate across repeated extensions/edits with `mp4` — recommended whenever a clip will be extended or re-edited multiple times. Seedance 2.5 only.
+- ✅ **Seedance 2.5 Image-to-Video (I2V)**: Animate a single static image with precise motion control using `image_url`.
+- ✅ **Seedance 2.5 First & Last Frame**: Generate a smooth keyframe-driven transition between a start and end image.
+- ✅ **Seedance 2.5 Omni-Reference**: Condition a video on any combination of image, video, and audio references in one request — up to 20 reference images, 6 reference videos, and 6 reference audio clips (up from 9/3/3 on Seedance 2.0).
+- ✅ **Seedance Character**: Generate a multi-panel character sheet (front, back, side, action pose, expressions) from 1–3 reference photos, then anchor an Omni-Reference generation on it via `consistent_video()` for consistent identity across shots.
+- ✅ **480p Tiers**: Every Seedance 2.5 endpoint has a faster, cheaper 480p variant alongside the 720p default.
+- ✅ **Reproducible Seeds**: Pass `seed` to keep generations in the same neighborhood across repeated calls.
 - ✅ **File Upload**: Directly upload local images and videos using the `upload_file` method, supporting seamless use in generation tasks.
 - ✅ **Less Censorship**: More permissive content policy than competing models — broader creative freedom out of the box.
-- ✅ **Flexible Aspect Ratios**: Optimized for `16:9`, `9:16` (TikTok/Reels), `4:3`, `3:4`, `1:1`, and `21:9`.
+- ✅ **Flexible Aspect Ratios**: `16:9`, `9:16` (TikTok/Reels), `1:1`, `4:3`, `3:4`, `21:9`, `9:21`.
 
 > **Resolution note**: Seedance 2.5 supports `480p` and `720p` at launch. `1080p` and `4K` are not yet available on this model.
+> **Access note**: Seedance 2.5 is an early-access build on MuAPI, gated to Pro/Business plan accounts.
 
 ---
 
@@ -113,7 +113,6 @@ submission = api.text_to_video(
     prompt="A cinematic slow-motion shot of a cyberpunk city in the rain, neon lights reflecting on puddles, 8k resolution",
     aspect_ratio="16:9",
     duration=5,
-    quality="high"
 )
 
 # 2. Wait for completion
@@ -126,66 +125,81 @@ print(f"Success! View your Seedance 2.5 video here: {result['url']}")
 ## 📡 API Endpoints & Reference
 
 ### 1. Seedance 2.5 Text-to-Video (T2V)
-**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-v2.0-t2v`
-
-Supports `@character:<id>` inline in the prompt — see [Character Workflow](#-character-consistency-workflow) below.
+**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-text-to-video` ($0.60/sec, 720p)
+**480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-text-to-video-480p` ($0.30/sec)
 
 ```bash
-curl --location --request POST "https://api.muapi.ai/api/v1/seedance-v2.0-t2v" \
+curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-text-to-video" \
   --header "Content-Type: application/json" \
   --header "x-api-key: YOUR_API_KEY" \
   --data-raw '{
       "prompt": "A majestic eagle soaring over the snow-capped Himalayas",
       "aspect_ratio": "16:9",
-      "duration": 5,
-      "quality": "high"
+      "duration": 5
   }'
 ```
 
 ### 2. Seedance 2.5 Image-to-Video (I2V)
-**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-v2.0-i2v`
+**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-image-to-video` ($0.60/sec, 720p)
+**480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-image-to-video-480p` ($0.30/sec)
 
-Reference images with `@image1`, `@image2`, etc. in the prompt. Supports `@character:<id>` — characters are automatically appended to `images_list`.
+Takes a single `image_url` (not a list) plus a `prompt`.
 
 ```bash
-curl --location --request POST "https://api.muapi.ai/api/v1/seedance-v2.0-i2v" \
+curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-image-to-video" \
   --header "Content-Type: application/json" \
   --header "x-api-key: YOUR_API_KEY" \
   --data-raw '{
       "prompt": "Make the clouds move slowly across the sky",
-      "images_list": ["https://example.com/mountain.jpg"],
+      "image_url": "https://example.com/mountain.jpg",
       "aspect_ratio": "16:9",
-      "duration": 5,
-      "quality": "basic"
+      "duration": 5
   }'
 ```
 
-### 3. Seedance 2.5 Omni-Reference
-**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.0-omni-reference`
+### 3. Seedance 2.5 First & Last Frame
+**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame` ($0.60/sec, 720p)
+**480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame-480p` ($0.30/sec)
 
-Condition a single video generation on any combination of image, video, and audio references. Use `@character:<id>` inline in the prompt to inject a character (see section below).
+Generates a smooth keyframe-driven transition between a start and end image. `images_list` must be exactly `[first_frame_url, last_frame_url]`.
 
 ```bash
-curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.0-omni-reference" \
+curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame" \
   --header "Content-Type: application/json" \
   --header "x-api-key: YOUR_API_KEY" \
   --data-raw '{
-      "prompt": "A dramatic chase scene through a neon city",
+      "prompt": "Smooth cinematic transition as the scene shifts from day to night",
+      "images_list": ["https://example.com/start.jpg", "https://example.com/end.jpg"],
       "aspect_ratio": "16:9",
-      "duration": 5,
-      "images_list": ["https://example.com/scene_ref.jpg"],
-      "video_files": ["https://example.com/style_ref.mp4"]
+      "duration": 5
   }'
 ```
 
-### 4. Seedance 2.5 Character (Consistent Character Sheets)
+### 4. Seedance 2.5 Omni-Reference
+**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-omni-reference` ($0.72/sec, 720p)
+**480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-omni-reference-480p` ($0.36/sec)
+
+Condition a single video generation on any combination of image, video, and audio references — up to 20 images, 6 videos, and 6 audio clips.
+
+```bash
+curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-omni-reference" \
+  --header "Content-Type: application/json" \
+  --header "x-api-key: YOUR_API_KEY" \
+  --data-raw '{
+      "prompt": "A dramatic chase scene through a neon city, matching the style of the reference image and rhythm of the reference video",
+      "aspect_ratio": "16:9",
+      "duration": 5,
+      "images_list": ["https://example.com/scene_ref.jpg"],
+      "videos_list": ["https://example.com/style_ref.mp4"]
+  }'
+```
+
+### 5. Seedance Character (Consistent Character Sheets)
 **Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2-character`
 
 Create a multi-panel character sheet (front, back, side profile, action pose, facial expressions, accessories) at 4K / 21:9 from 1–3 reference photos of a real person.
 
-Once the sheet is generated you can use it two ways:
-- **`@character:<request_id>`** inline in any T2V, I2V, or Omni-Reference prompt
-- Pass `outputs[0]` (the sheet image URL) directly as `@image1` in an I2V request for tighter face fidelity via `consistent_video()`
+Once the sheet is generated, pass its URL into `consistent_video()`, which anchors an Omni-Reference generation on it for consistent character identity across shots.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -204,10 +218,13 @@ curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2-character
 
 **Cost:** $0.18 per character sheet
 
-For a full guide including the direct sheet-anchored I2V workflow, see [CHARACTER_CONSISTENCY.md](CHARACTER_CONSISTENCY.md).
+For a full guide, see [CHARACTER_CONSISTENCY.md](CHARACTER_CONSISTENCY.md).
 
-### 5. Seedance 2.5 Video-Edit
-**Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-v2.0-video-edit`
+### 6. Seedance 2.0 Video-Edit & Extend
+
+There is no dedicated Seedance 2.5 video-edit or extend endpoint yet. `video_edit()` and `extend_video()` fall back to the Seedance 2.0 endpoints below, which work on any Seedance-family request_id/video.
+
+**Video-Edit endpoint**: `POST https://api.muapi.ai/api/v1/seedance-v2.0-video-edit`
 ```bash
 curl --location --request POST "https://api.muapi.ai/api/v1/seedance-v2.0-video-edit" \
   --header "Content-Type: application/json" \
@@ -226,11 +243,9 @@ curl --location --request POST "https://api.muapi.ai/api/v1/seedance-v2.0-video-
 
 ## 🎭 Character Consistency Workflow
 
-Create a fictional character from reference photos and maintain their identity across multiple video scenes.
+Create a fictional character from reference photos and maintain their identity across multiple video scenes using the Omni-Reference endpoint.
 
 See [CHARACTER_CONSISTENCY.md](CHARACTER_CONSISTENCY.md) for a full guide.
-
-### Option A — `@character:<id>` inline (simplest)
 
 ```python
 from seedance_api import SeedanceAPI
@@ -242,48 +257,30 @@ char = api.create_character(
     outfit_description="cyberpunk jacket with neon accents, glowing visor",
 )
 char_id = char["request_id"]
-api.wait_for_completion(char_id)  # wait for sheet to render
-
-# Step 2 — reference the character inline in any prompt
-video = api.text_to_video(
-    prompt=f"@character:{char_id} rides a motorcycle through a neon-lit city at night",
-    aspect_ratio="16:9",
-    duration=5,
-)
-result = api.wait_for_completion(video["request_id"])
-print(f"Video: {result['outputs'][0]}")
-
-# Multiple characters in one prompt
-char2_id = "another-completed-character-request-id"
-video2 = api.text_to_video(
-    prompt=f"@character:{char_id} and @character:{char2_id} face off in a neon-lit arena",
-    aspect_ratio="16:9",
-    duration=5,
-)
-```
-
-### Option B — `consistent_video()` (tighter face fidelity)
-
-Pass the character sheet directly as the anchor image for Image-to-Video generation.
-
-```python
-# Get the sheet URL after character creation
 sheet_result = api.wait_for_completion(char_id)
 sheet_url = sheet_result["outputs"][0]
 
-# Generate with the sheet as anchor
+# Step 2 — anchor a generation on the sheet via consistent_video() (Omni-Reference)
 video = api.consistent_video(
     sheet_url=sheet_url,
-    prompt="@image1 draws their weapon in slow motion, dramatic lighting",
+    prompt="The character rides a motorcycle through a neon-lit city at night",
     aspect_ratio="16:9",
     duration=5,
-    quality="high",
 )
 result = api.wait_for_completion(video["request_id"])
 print(f"Video: {result['outputs'][0]}")
-```
 
-> **Tip**: `@character:<id>` works in T2V, I2V, and Omni-Reference prompts. Use `consistent_video()` when face similarity is critical.
+# Add extra scene/prop reference images alongside the character sheet
+video2 = api.consistent_video(
+    sheet_url=sheet_url,
+    prompt="The character draws their weapon in slow motion, dramatic lighting",
+    aspect_ratio="16:9",
+    duration=5,
+    extra_images=["https://example.com/background.jpg"],
+)
+result2 = api.wait_for_completion(video2["request_id"])
+print(f"Video: {result2['outputs'][0]}")
+```
 
 ---
 
@@ -293,17 +290,20 @@ For prompt engineering and advanced use cases, see [awesome-seedance-2.5-api-pro
 
 | Method | Parameters | Description |
 | :--- | :--- | :--- |
-| `text_to_video` | `prompt`, `aspect_ratio`, `duration`, `quality`, `remove_watermark`, `generate_audio`, `camera_fixed`, `output_format` | Generate video from text, up to 30s. Supports `@character:<id>` in prompt. |
-| `image_to_video` | `prompt`, `images_list`, `aspect_ratio`, `duration`, `quality`, `remove_watermark`, `generate_audio`, `camera_fixed`, `output_format` | Animate images. Supports `@image1`/`@character:<id>` in prompt. |
-| `omni_reference` | `prompt`, `aspect_ratio`, `duration`, `quality`, `images_list`, `video_files`, `audio_files`, `generate_audio`, `camera_fixed`, `output_format` | Multi-modal reference video generation — up to 30 images / 10 videos / 10 audio clips. |
+| `text_to_video` | `prompt`, `aspect_ratio`, `duration`, `seed` | Generate 720p video from text, up to 30s. |
+| `text_to_video_480p` | `prompt`, `aspect_ratio`, `duration`, `seed` | 480p tier — faster/cheaper. |
+| `image_to_video` | `prompt`, `image_url`, `aspect_ratio`, `duration`, `seed` | Animate a single image at 720p. |
+| `image_to_video_480p` | `prompt`, `image_url`, `aspect_ratio`, `duration`, `seed` | 480p tier — faster/cheaper. |
+| `first_last_frame` | `prompt`, `images_list` (exactly 2), `aspect_ratio`, `duration`, `seed` | Keyframe transition between a start and end image at 720p. |
+| `first_last_frame_480p` | `prompt`, `images_list` (exactly 2), `aspect_ratio`, `duration`, `seed` | 480p tier — faster/cheaper. |
+| `omni_reference` | `prompt`, `aspect_ratio`, `duration`, `images_list`, `videos_list`, `audios_list`, `seed` | Multi-modal reference video generation at 720p — up to 20 images / 6 videos / 6 audio clips. |
+| `omni_reference_480p` | same as above | 480p tier — faster/cheaper. |
 | `create_character` | `images_list` (1–3), `outfit_description`, `character_name` | Generate a 4K character sheet from reference photos. Returns `request_id`; `outputs[0]` is the sheet URL. |
-| `consistent_video` | `sheet_url`, `prompt`, `aspect_ratio`, `duration`, `quality`, `extra_images` | I2V with the character sheet as anchor (`@image1`). Tighter face fidelity than `@character:<id>`. |
-| `video_edit` | `prompt`, `video_urls`, `images_list`, `aspect_ratio`, `quality`, `remove_watermark`, `output_format` | Edit existing videos with prompts and images. |
+| `consistent_video` | `sheet_url`, `prompt`, `aspect_ratio`, `duration`, `extra_images` | Omni-Reference generation anchored on the character sheet. |
+| `video_edit` | `prompt`, `video_urls`, `images_list`, `aspect_ratio`, `quality`, `remove_watermark`, `output_format` | Edit existing videos with prompts and images (Seedance 2.0 endpoint). |
 | `watermark_remover`| `video_url` | Remove MuAPI watermark from a Seedance video. |
 | `watermark_remover_pro`| `video_url` | Remove MuAPI watermark from a Seedance video (Pro version). |
-| `text_to_video_480p`| `prompt`, `aspect_ratio`, `duration`, `quality` | Generate a 480p video from text (faster/cheaper). |
-| `image_to_video_480p`| `prompt`, `images_list`, `aspect_ratio`, `duration`, `quality` | Generate a 480p video from an image (faster/cheaper). |
-| `extend_video` | `request_id`, `prompt`, `duration`, `quality`, `output_format` | Extend an existing Seedance video segment, up to a combined 30s. |
+| `extend_video` | `request_id`, `prompt`, `duration`, `quality`, `output_format` | Extend an existing Seedance video segment (Seedance 2.0 endpoint). |
 | `upload_file` | `file_path` | Upload a local file (image or video) to MuAPI for use in generation tasks. |
 | `get_result` | `request_id` | Check task status for the Seedance API. |
 | `wait_for_completion` | `request_id`, `poll_interval`, `timeout` | Blocking helper for Seedance generation tasks. |

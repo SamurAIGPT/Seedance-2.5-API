@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="seedance-2-api",
-    version="0.1.0",
+    version="0.2.0",
     author="Anil Matcha",
     description="Python wrapper for ByteDance's Seedance 2.5 API — realistic human faces, 1080p video, less censorship, Text-to-Video, Image-to-Video, and consistent character generation.",
     long_description=open("README.md").read(),

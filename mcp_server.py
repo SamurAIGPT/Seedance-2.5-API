@@ -11,52 +11,66 @@ def get_api():
     return SeedanceAPI()
 
 @mcp.tool()
-def text_to_video(prompt: str, aspect_ratio: str = "16:9", duration: int = 5, quality: str = "basic", remove_watermark: bool = False) -> str:
+def text_to_video(prompt: str, aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
     """
-    Generate a video from a text prompt using Seedance 2.5.
-    
-    :param prompt: Descriptive text prompt. Use @character:<id> for consistent characters.
+    Generate a 720p video from a text prompt using Seedance 2.5.
+
+    :param prompt: Descriptive text prompt.
     :param aspect_ratio: Video aspect ratio (e.g., '16:9', '9:16', '1:1').
-    :param duration: Duration in seconds (5 or 10).
-    :param quality: 'basic' or 'high'.
-    :param remove_watermark: Whether to remove the MuAPI watermark.
+    :param duration: Duration in seconds, 4-30.
+    :param seed: Optional int seed for reproducible generation.
     """
     api = get_api()
-    result = api.text_to_video(prompt, aspect_ratio, duration, quality, remove_watermark)
+    result = api.text_to_video(prompt, aspect_ratio, duration, seed)
     return json.dumps(result, indent=2)
 
 @mcp.tool()
-def image_to_video(prompt: str, images_list: list[str], aspect_ratio: str = "16:9", duration: int = 5, quality: str = "basic", remove_watermark: bool = False) -> str:
+def image_to_video(prompt: str, image_url: str, aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
     """
-    Animate static images into a video using Seedance 2.5.
-    
+    Animate a single static image into a 720p video using Seedance 2.5.
+
     :param prompt: Text prompt guiding the animation.
-    :param images_list: List of image URLs to animate.
+    :param image_url: URL of the image to animate.
     :param aspect_ratio: Video aspect ratio.
-    :param duration: Duration in seconds.
-    :param quality: 'basic' or 'high'.
-    :param remove_watermark: Whether to remove the MuAPI watermark.
+    :param duration: Duration in seconds, 4-30.
+    :param seed: Optional int seed for reproducible generation.
     """
     api = get_api()
-    result = api.image_to_video(prompt, images_list, aspect_ratio, duration, quality, remove_watermark)
+    result = api.image_to_video(prompt, image_url, aspect_ratio, duration, seed)
     return json.dumps(result, indent=2)
 
 @mcp.tool()
-def omni_reference(prompt: str, aspect_ratio: str = "16:9", duration: int = 5, quality: str = "basic", 
-                   images_list: list[str] = None, video_files: list[str] = None, audio_files: list[str] = None) -> str:
+def first_last_frame(prompt: str, images_list: list[str], aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
     """
-    Generate a video conditioned on a mix of image, video, and audio references.
-    
+    Generate a smooth 720p transition between a start and end image using Seedance 2.5.
+
+    :param prompt: Text prompt describing the transition/motion.
+    :param images_list: Exactly two image URLs: [first_frame_url, last_frame_url].
+    :param aspect_ratio: Video aspect ratio.
+    :param duration: Duration in seconds, 4-30.
+    :param seed: Optional int seed for reproducible generation.
+    """
+    api = get_api()
+    result = api.first_last_frame(prompt, images_list, aspect_ratio, duration, seed)
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+def omni_reference(prompt: str, aspect_ratio: str = "16:9", duration: int = 5,
+                   images_list: list[str] = None, videos_list: list[str] = None, audios_list: list[str] = None,
+                   seed: int = None) -> str:
+    """
+    Generate a 720p video conditioned on a mix of image, video, and audio references using Seedance 2.5.
+
     :param prompt: Descriptive prompt.
     :param aspect_ratio: Video aspect ratio.
-    :param duration: Duration in seconds.
-    :param quality: 'basic' or 'high'.
-    :param images_list: Optional image URLs.
-    :param video_files: Optional video URLs.
-    :param audio_files: Optional audio URLs.
+    :param duration: Duration in seconds, 4-30.
+    :param images_list: Optional image URLs (up to 20).
+    :param videos_list: Optional video URLs (up to 6).
+    :param audios_list: Optional audio URLs (up to 6).
+    :param seed: Optional int seed for reproducible generation.
     """
     api = get_api()
-    result = api.omni_reference(prompt, aspect_ratio, duration, quality, images_list, video_files, audio_files)
+    result = api.omni_reference(prompt, aspect_ratio, duration, images_list, videos_list, audios_list, seed)
     return json.dumps(result, indent=2)
 
 @mcp.tool()
@@ -76,8 +90,11 @@ def create_character(images_list: list[str], outfit_description: str, character_
 @mcp.tool()
 def extend_video(request_id: str, prompt: str = "", duration: int = 5, quality: str = "basic") -> str:
     """
-    Extend a previously generated Seedance 2.5 video segment.
-    
+    Extend a previously generated Seedance video segment.
+
+    Note: there is no dedicated Seedance 2.5 extend endpoint yet — this calls the
+    Seedance 2.0 video-extend endpoint, which works on any Seedance-family request_id.
+
     :param request_id: ID of the video to extend.
     :param prompt: Optional prompt for the extension.
     :param duration: Seconds to extend (e.g., 5).
@@ -123,21 +140,21 @@ def watermark_remover_pro(video_url: str) -> str:
     return json.dumps(result, indent=2)
 
 @mcp.tool()
-def t2v_480p(prompt: str, aspect_ratio: str = "16:9", duration: int = 5, quality: str = "basic") -> str:
+def t2v_480p(prompt: str, aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
     """
-    Generate a 480p video from text (faster/cheaper).
+    Generate a Seedance 2.5 480p video from text (faster/cheaper than the 720p tier).
     """
     api = get_api()
-    result = api.text_to_video_480p(prompt, aspect_ratio, duration, quality)
+    result = api.text_to_video_480p(prompt, aspect_ratio, duration, seed)
     return json.dumps(result, indent=2)
 
 @mcp.tool()
-def i2v_480p(prompt: str, images_list: list[str], aspect_ratio: str = "16:9", duration: int = 5, quality: str = "basic") -> str:
+def i2v_480p(prompt: str, image_url: str, aspect_ratio: str = "16:9", duration: int = 5, seed: int = None) -> str:
     """
-    Generate a 480p video from an image (faster/cheaper).
+    Generate a Seedance 2.5 480p video from an image (faster/cheaper than the 720p tier).
     """
     api = get_api()
-    result = api.image_to_video_480p(prompt, images_list, aspect_ratio, duration, quality)
+    result = api.image_to_video_480p(prompt, image_url, aspect_ratio, duration, seed)
     return json.dumps(result, indent=2)
 
 @mcp.tool()

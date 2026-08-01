@@ -22,116 +22,104 @@ class SeedanceAPI:
             "Content-Type": "application/json"
         }
 
-    def text_to_video(self, prompt, aspect_ratio="16:9", duration=5, quality="basic", remove_watermark=False,
-                       generate_audio=True, camera_fixed=False, output_format="mp4"):
+    def text_to_video(self, prompt, aspect_ratio="16:9", duration=5, seed=None):
         """
-        Submits a Seedance 2.5 Text-to-Video (T2V) generation task.
+        Submits a Seedance 2.5 Text-to-Video (T2V) generation task at 720p.
 
-        :param prompt: The text prompt describing the video. To use a fictional character,
-                       reference it inline with @character:<id> where <id> is the request_id
-                       from a completed create_character() call. Multiple characters supported.
-                       Example: "@character:ab539e5f-... walks on the beach at sunset"
-        :param aspect_ratio: Video aspect ratio (e.g., '16:9', '9:16').
-        :param duration: Video duration in seconds. Seedance 2.5 supports up to 30s (up from 15s on 2.0).
-        :param quality: Output quality ('basic' or 'high'). 4K/1080p are not available at 2.5 launch — 480p/720p only.
-        :param remove_watermark: Whether to remove the watermark.
-        :param generate_audio: Whether the video includes synchronized audio (voice/sfx/music). Default True.
-        :param camera_fixed: Whether to bias the model toward a fixed (non-moving) camera. Default False.
-        :param output_format: 'mp4' (default, standard color) or 'mov' (yuv444p, higher color fidelity —
-                              recommended when the output will be repeatedly extended/edited). Seedance 2.5 only.
+        :param prompt: The text prompt describing the video.
+        :param aspect_ratio: Video aspect ratio ('16:9', '9:16', '1:1', '4:3', '3:4', '21:9', '9:21').
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
         :return: JSON response from the Seedance 2.5 API.
         """
-        endpoint = f"{self.base_url}/seedance-v2.0-t2v"
+        endpoint = f"{self.base_url}/seedance-2.5-text-to-video"
         payload = {
             "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "duration": duration,
-            "quality": quality,
-            "remove_watermark": remove_watermark,
-            "generate_audio": generate_audio,
-            "camera_fixed": camera_fixed,
-            "output_format": output_format
         }
+        if seed is not None:
+            payload["seed"] = seed
         return self._post_request(endpoint, payload)
 
-    def image_to_video(self, prompt, images_list, aspect_ratio="16:9", duration=5, quality="basic", remove_watermark=False,
-                        generate_audio=True, camera_fixed=False, output_format="mp4"):
+    def image_to_video(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None):
         """
-        Submits a Seedance 2.5 Image-to-Video (I2V) generation task.
+        Submits a Seedance 2.5 Image-to-Video (I2V) generation task at 720p.
 
-        :param prompt: Text prompt to guide the animation. Reference images in the list with
-                       @image1, @image2, etc. To inject a character from create_character(),
-                       use @character:<id> inline — e.g. "@image1 shows the scene, @character:ab539e5f-... is the hero".
-                       Characters are appended after images_list entries automatically.
-        :param images_list: A list of image URLs to animate. Seedance 2.5 accepts up to 30 reference
-                            images per request (up from 9 on 2.0).
+        :param prompt: Text prompt to guide the animation.
+        :param image_url: URL of the single image to animate.
         :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration. Seedance 2.5 supports up to 30s (up from 15s on 2.0).
-        :param quality: Output quality ('basic' or 'high'). 4K/1080p are not available at 2.5 launch — 480p/720p only.
-        :param remove_watermark: Whether to remove the watermark.
-        :param generate_audio: Whether the video includes synchronized audio (voice/sfx/music). Default True.
-        :param camera_fixed: Whether to bias the model toward a fixed (non-moving) camera. Default False.
-        :param output_format: 'mp4' (default, standard color) or 'mov' (yuv444p, higher color fidelity —
-                              recommended when the output will be repeatedly extended/edited). Seedance 2.5 only.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
         :return: JSON response from the Seedance 2.5 API.
         """
-        endpoint = f"{self.base_url}/seedance-v2.0-i2v"
+        endpoint = f"{self.base_url}/seedance-2.5-image-to-video"
+        payload = {
+            "prompt": prompt,
+            "image_url": image_url,
+            "aspect_ratio": aspect_ratio,
+            "duration": duration,
+        }
+        if seed is not None:
+            payload["seed"] = seed
+        return self._post_request(endpoint, payload)
+
+    def first_last_frame(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None):
+        """
+        Submits a Seedance 2.5 First & Last Frame generation task at 720p.
+
+        Generates a smooth keyframe-driven transition between a start and end image.
+
+        :param prompt: Text prompt describing the desired transition/motion.
+        :param images_list: Exactly two image URLs, in order: [first_frame_url, last_frame_url].
+        :param aspect_ratio: Video aspect ratio.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
+        :return: JSON response from the Seedance 2.5 API.
+        """
+        endpoint = f"{self.base_url}/seedance-2.5-first-last-frame"
         payload = {
             "prompt": prompt,
             "images_list": images_list,
             "aspect_ratio": aspect_ratio,
             "duration": duration,
-            "quality": quality,
-            "remove_watermark": remove_watermark,
-            "generate_audio": generate_audio,
-            "camera_fixed": camera_fixed,
-            "output_format": output_format
         }
+        if seed is not None:
+            payload["seed"] = seed
         return self._post_request(endpoint, payload)
 
-    def omni_reference(self, prompt, aspect_ratio="16:9", duration=5, quality="basic",
-                        images_list=None, video_files=None, audio_files=None,
-                        generate_audio=True, camera_fixed=False, output_format="mp4"):
+    def omni_reference(self, prompt, aspect_ratio="16:9", duration=5,
+                        images_list=None, videos_list=None, audios_list=None, seed=None):
         """
-        Submits a Seedance 2.5 Omni-Reference generation task.
+        Submits a Seedance 2.5 Omni-Reference generation task at 720p.
 
-        Omni-Reference lets you condition a video on any combination of image, video,
-        and audio references — all in a single request. Use @character:<id> inline in
-        the prompt to inject a fictional character created via create_character().
+        Omni-Reference blends any combination of image, video, and audio references
+        into a single guided generation — images steer environment/style, videos steer
+        camera motion/rhythm, audio steers mood.
 
-        :param prompt: Text prompt describing the video. Supports @character:<id> syntax.
+        :param prompt: Text prompt describing the video, referencing the provided assets.
         :param aspect_ratio: Video aspect ratio (e.g., '16:9', '9:16').
-        :param duration: Video duration in seconds (minimum 4 s for video references).
-                         Seedance 2.5 supports up to 30s (up from 15s on 2.0).
-        :param quality: Output quality ('basic' or 'high'). 4K/1080p are not available at 2.5 launch — 480p/720p only.
-        :param images_list: Optional list of image URLs to condition on. Seedance 2.5 accepts up to
-                            30 reference images (up from 9 on 2.0).
-        :param video_files: Optional list of video URLs to condition on. Seedance 2.5 accepts up to
-                           10 reference videos, each 2-30s, totaling <=30s (up from 3 videos/15s total on 2.0).
-        :param audio_files: Optional list of audio URLs to condition on. Seedance 2.5 accepts up to
-                           10 reference audio clips, each 2-30s, totaling <=30s (up from 3 clips/15s total on 2.0).
-        :param generate_audio: Whether the video includes synchronized audio (voice/sfx/music). Default True.
-        :param camera_fixed: Whether to bias the model toward a fixed (non-moving) camera. Default False.
-        :param output_format: 'mp4' (default, standard color) or 'mov' (yuv444p, higher color fidelity —
-                              recommended when the output will be repeatedly extended/edited). Seedance 2.5 only.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param images_list: Optional list of up to 20 reference image URLs.
+        :param videos_list: Optional list of up to 6 reference video URLs.
+        :param audios_list: Optional list of up to 6 reference audio URLs.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
         :return: JSON response with request_id.
         """
-        endpoint = f"{self.base_url}/seedance-2.0-omni-reference"
+        endpoint = f"{self.base_url}/seedance-2.5-omni-reference"
         payload = {
             "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "duration": duration,
-            "quality": quality,
-            "generate_audio": generate_audio,
-            "camera_fixed": camera_fixed,
-            "output_format": output_format,
         }
         if images_list:
             payload["images_list"] = images_list
-        if video_files:
-            payload["video_files"] = video_files
-        if audio_files:
-            payload["audio_files"] = audio_files
+        if videos_list:
+            payload["videos_list"] = videos_list
+        if audios_list:
+            payload["audios_list"] = audios_list
+        if seed is not None:
+            payload["seed"] = seed
         return self._post_request(endpoint, payload)
 
     def create_character(self, images_list, outfit_description, character_name=None):
@@ -142,11 +130,8 @@ class SeedanceAPI:
         The API renders a structured character sheet (front, back, side profile, action pose,
         facial expressions, accessories) at 4K / 21:9 and returns a request_id.
 
-        Once completed the character can be:
-          - Referenced inline in any T2V, I2V, or Omni-Reference prompt using
-            ``@character:<request_id>``
-          - Used directly as the anchor image in consistent_video() for tighter
-            face/identity preservation
+        Once completed, pass the sheet URL into consistent_video() to anchor
+        an Omni-Reference generation on this character's identity.
 
         :param images_list: List of 1–3 image URLs of the reference person
                             (clear, well-lit frontal/3/4-angle shots work best).
@@ -165,17 +150,10 @@ class SeedanceAPI:
             sheet_result = api.wait_for_completion(char_id)
             sheet_url = sheet_result["outputs"][0]   # character sheet image URL
 
-            # Step 2a — use @character:<id> inline in T2V
-            video = api.text_to_video(
-                prompt=f"@character:{char_id} rides a motorcycle through a neon-lit city",
-                aspect_ratio="16:9",
-                duration=5,
-            )
-
-            # Step 2b — OR use consistent_video() for direct sheet-anchored I2V
+            # Step 2 — anchor a generation on the sheet via consistent_video()
             video = api.consistent_video(
                 sheet_url=sheet_url,
-                prompt="@image1 rides a motorcycle through a neon-lit city at night",
+                prompt="The character rides a motorcycle through a neon-lit city at night",
                 aspect_ratio="16:9",
                 duration=5,
             )
@@ -191,26 +169,24 @@ class SeedanceAPI:
             payload["character_name"] = character_name
         return self._post_request(endpoint, payload)
 
-    def consistent_video(self, sheet_url, prompt, aspect_ratio="16:9", duration=5,
-                         quality="basic", extra_images=None):
+    def consistent_video(self, sheet_url, prompt, aspect_ratio="16:9", duration=5, extra_images=None):
         """
         Generate a video with consistent character identity by anchoring on a
         character sheet produced by create_character().
 
-        The sheet is passed as the first reference image (``@image1``) in an
-        Image-to-Video request. Use ``@image1`` in the prompt to refer to the
-        character — it is automatically prepended if omitted.
+        Uses the Omni-Reference endpoint (not Image-to-Video, which only accepts a
+        single image) so the character sheet and any extra scene images can be passed
+        together as reference images.
 
         :param sheet_url: URL of the character sheet image (from wait_for_completion()
                           on a create_character() request — ``result["outputs"][0]``).
-        :param prompt: Scene description. Use ``@image1`` to address the character,
-                       ``@image2``/``@image3`` for any extra scene images.
-                       Example: ``"@image1 walks through a neon-lit city at night"``
-        :param aspect_ratio: Video aspect ratio (16:9 / 9:16 / 4:3 / 3:4).
-        :param duration: 5 / 10 / 15 seconds.
-        :param quality: ``"basic"`` or ``"high"`` (2K).
+        :param prompt: Scene description referencing the character and any extra images.
+                       Example: ``"The character from the reference images draws their
+                       katana in slow motion, dramatic lighting"``
+        :param aspect_ratio: Video aspect ratio (16:9 / 9:16 / 1:1 / 4:3 / 3:4 / 21:9 / 9:21).
+        :param duration: Video duration in seconds, 4-30. Default 5.
         :param extra_images: Optional list of additional scene/background image URLs
-                             (referenced as @image2, @image3 in the prompt).
+                             (up to 19 more, since the sheet takes one of the 20 slots).
         :return: JSON response with request_id.
 
         Example::
@@ -225,10 +201,9 @@ class SeedanceAPI:
 
             video = api.consistent_video(
                 sheet_url=sheet_url,
-                prompt="@image1 draws their katana in slow motion, dramatic lighting",
+                prompt="The character from the reference image draws their katana in slow motion, dramatic lighting",
                 aspect_ratio="16:9",
                 duration=5,
-                quality="high",
             )
             result = api.wait_for_completion(video["request_id"])
             print(result["outputs"][0])
@@ -237,29 +212,25 @@ class SeedanceAPI:
         if extra_images:
             images_list.extend(extra_images)
 
-        # Ensure the prompt references @image1 so the model anchors on the sheet
-        if "@image1" not in prompt:
-            prompt = f"@image1 {prompt.strip()}"
-
-        return self.image_to_video(
+        return self.omni_reference(
             prompt=prompt,
             images_list=images_list,
             aspect_ratio=aspect_ratio,
             duration=duration,
-            quality=quality,
         )
 
     def extend_video(self, request_id, prompt="", duration=5, quality="basic", output_format="mp4"):
         """
         Extends a previously generated Seedance 2.5 video.
 
+        Note: there is no dedicated Seedance 2.5 extend endpoint yet — this calls the
+        Seedance 2.0 video-extend endpoint, which works on any Seedance-family request_id.
+
         :param request_id: The ID of the video segment to extend.
         :param prompt: Optional text prompt for the extension.
-        :param duration: Extension duration in seconds. Combined output can reach 30s on Seedance 2.5.
-        :param output_format: 'mp4' or 'mov'. Use 'mov' (yuv444p + PCM audio) for repeated extensions —
-                              it avoids the color/brightness drift and audio desync that 'mp4' (yuv420p)
-                              accumulates across multiple re-encodes. Seedance 2.5 only.
-        :return: JSON response from the Seedance 2.5 API.
+        :param duration: Extension duration in seconds.
+        :param output_format: 'mp4' or 'mov'.
+        :return: JSON response from the Seedance API.
         """
         endpoint = f"{self.base_url}/seedance-v2.0-extend"
         payload = {
@@ -274,17 +245,19 @@ class SeedanceAPI:
     def video_edit(self, prompt, video_urls, images_list=None, aspect_ratio="16:9", quality="basic", remove_watermark=False,
                     output_format="mp4"):
         """
-        Submits a Seedance 2.5 Video-Edit generation task.
+        Submits a Seedance 2.0 Video-Edit generation task.
+
+        Note: there is no dedicated Seedance 2.5 video-edit endpoint yet — this calls
+        the Seedance 2.0 video-edit endpoint.
 
         :param prompt: The text prompt describing the edit.
         :param video_urls: A list of video URLs to edit.
         :param images_list: Optional list of image URLs.
         :param aspect_ratio: Video aspect ratio.
-        :param quality: Output quality. 4K/1080p are not available at 2.5 launch — 480p/720p only.
+        :param quality: Output quality.
         :param remove_watermark: Whether to remove watermark.
-        :param output_format: 'mp4' (default) or 'mov' (yuv444p, higher color fidelity for multi-pass
-                              edits). Seedance 2.5 only.
-        :return: JSON response from the Seedance 2.5 API.
+        :param output_format: 'mp4' (default) or 'mov'.
+        :return: JSON response from the Seedance API.
         """
         endpoint = f"{self.base_url}/seedance-v2.0-video-edit"
         payload = {
@@ -324,44 +297,98 @@ class SeedanceAPI:
         }
         return self._post_request(endpoint, payload)
 
-    def text_to_video_480p(self, prompt, aspect_ratio="16:9", duration=5, quality="basic"):
+    def text_to_video_480p(self, prompt, aspect_ratio="16:9", duration=5, seed=None):
         """
-        Submits a Seedance 2.5 Text-to-Video (T2V) 480p task.
-        
+        Submits a Seedance 2.5 Text-to-Video (T2V) 480p task — faster/cheaper than the 720p tier.
+
         :param prompt: Descriptive text prompt.
         :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration.
-        :param quality: Output quality.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
         :return: JSON response from the Seedance 2.5 API.
         """
-        endpoint = f"{self.base_url}/seedance-2.0-t2v-480p"
+        endpoint = f"{self.base_url}/seedance-2.5-text-to-video-480p"
         payload = {
             "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "duration": duration,
-            "quality": quality
         }
+        if seed is not None:
+            payload["seed"] = seed
         return self._post_request(endpoint, payload)
 
-    def image_to_video_480p(self, prompt, images_list, aspect_ratio="16:9", duration=5, quality="basic"):
+    def image_to_video_480p(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None):
         """
-        Submits a Seedance 2.5 Image-to-Video (I2V) 480p task.
-        
+        Submits a Seedance 2.5 Image-to-Video (I2V) 480p task — faster/cheaper than the 720p tier.
+
         :param prompt: Text prompt to guide the animation.
-        :param images_list: List of image URLs.
+        :param image_url: URL of the single image to animate.
         :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration.
-        :param quality: Output quality.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
         :return: JSON response from the Seedance 2.5 API.
         """
-        endpoint = f"{self.base_url}/seedance-2.0-i2v-480p"
+        endpoint = f"{self.base_url}/seedance-2.5-image-to-video-480p"
+        payload = {
+            "prompt": prompt,
+            "image_url": image_url,
+            "aspect_ratio": aspect_ratio,
+            "duration": duration,
+        }
+        if seed is not None:
+            payload["seed"] = seed
+        return self._post_request(endpoint, payload)
+
+    def first_last_frame_480p(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None):
+        """
+        Submits a Seedance 2.5 First & Last Frame 480p task — faster/cheaper than the 720p tier.
+
+        :param prompt: Text prompt describing the desired transition/motion.
+        :param images_list: Exactly two image URLs, in order: [first_frame_url, last_frame_url].
+        :param aspect_ratio: Video aspect ratio.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
+        :return: JSON response from the Seedance 2.5 API.
+        """
+        endpoint = f"{self.base_url}/seedance-2.5-first-last-frame-480p"
         payload = {
             "prompt": prompt,
             "images_list": images_list,
             "aspect_ratio": aspect_ratio,
             "duration": duration,
-            "quality": quality
         }
+        if seed is not None:
+            payload["seed"] = seed
+        return self._post_request(endpoint, payload)
+
+    def omni_reference_480p(self, prompt, aspect_ratio="16:9", duration=5,
+                             images_list=None, videos_list=None, audios_list=None, seed=None):
+        """
+        Submits a Seedance 2.5 Omni-Reference 480p task — faster/cheaper than the 720p tier.
+
+        :param prompt: Text prompt describing the video, referencing the provided assets.
+        :param aspect_ratio: Video aspect ratio.
+        :param duration: Video duration in seconds, 4-30. Default 5.
+        :param images_list: Optional list of up to 20 reference image URLs.
+        :param videos_list: Optional list of up to 6 reference video URLs.
+        :param audios_list: Optional list of up to 6 reference audio URLs.
+        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
+        :return: JSON response with request_id.
+        """
+        endpoint = f"{self.base_url}/seedance-2.5-omni-reference-480p"
+        payload = {
+            "prompt": prompt,
+            "aspect_ratio": aspect_ratio,
+            "duration": duration,
+        }
+        if images_list:
+            payload["images_list"] = images_list
+        if videos_list:
+            payload["videos_list"] = videos_list
+        if audios_list:
+            payload["audios_list"] = audios_list
+        if seed is not None:
+            payload["seed"] = seed
         return self._post_request(endpoint, payload)
 
     def vip_text_to_video_1080p(self, prompt, aspect_ratio="16:9", duration=5):
