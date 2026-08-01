@@ -127,6 +127,7 @@ print(f"Success! View your Seedance 2.5 video here: {result['url']}")
 ### 1. Seedance 2.5 Text-to-Video (T2V)
 **Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-text-to-video` ($0.60/sec, 720p)
 **480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-text-to-video-480p` ($0.30/sec)
+**Playground**: [720p](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-text-to-video-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 ```bash
 curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-text-to-video" \
@@ -142,6 +143,7 @@ curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-text-to
 ### 2. Seedance 2.5 Image-to-Video (I2V)
 **Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-image-to-video` ($0.60/sec, 720p)
 **480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-image-to-video-480p` ($0.30/sec)
+**Playground**: [720p](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-image-to-video-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 Takes a single `image_url` (not a list) plus a `prompt`.
 
@@ -159,12 +161,14 @@ curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-image-t
 
 ### 2b. Seedance 2.5 Spicy (T2V / I2V)
 **Endpoints**: `POST https://api.muapi.ai/api/v1/seedance-2.5-spicy-text-to-video` · `POST https://api.muapi.ai/api/v1/seedance-2.5-spicy-image-to-video` ($0.60/sec, 720p only — no 480p tier)
+**Playground**: [T2V](https://muapi.ai/playground/seedance-2.5-spicy-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [I2V](https://muapi.ai/playground/seedance-2.5-spicy-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 Relaxed-moderation siblings of the flagship T2V/I2V models — same request shape, same pricing, more permissive content policy.
 
 ### 3. Seedance 2.5 First & Last Frame
 **Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame` ($0.60/sec, 720p)
 **480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-first-last-frame-480p` ($0.30/sec)
+**Playground**: [720p](https://muapi.ai/playground/seedance-2.5-first-last-frame?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-first-last-frame-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 Generates a smooth keyframe-driven transition between a start and end image. `images_list` must be exactly `[first_frame_url, last_frame_url]`.
 
@@ -183,6 +187,7 @@ curl --location --request POST "https://api.muapi.ai/api/v1/seedance-2.5-first-l
 ### 4. Seedance 2.5 Omni-Reference
 **Endpoint**: `POST https://api.muapi.ai/api/v1/seedance-2.5-omni-reference` ($0.72/sec, 720p)
 **480p tier**: `POST https://api.muapi.ai/api/v1/seedance-2.5-omni-reference-480p` ($0.36/sec)
+**Playground**: [720p](https://muapi.ai/playground/seedance-2.5-omni-reference?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-omni-reference-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 Condition a single video generation on any combination of image, video, and audio references — up to 20 images, 6 videos, and 6 audio clips.
 
@@ -318,7 +323,11 @@ For prompt engineering and advanced use cases, see [awesome-seedance-2.5-api-pro
 ---
 
 ## 🔗 Official Resources
-- **Playground — Seedance 2.5**: [I2V](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [T2V](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
+- **Playground — Seedance 2.5**:
+  - Text-to-Video: [720p](https://muapi.ai/playground/seedance-2.5-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-text-to-video-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [Spicy](https://muapi.ai/playground/seedance-2.5-spicy-text-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
+  - Image-to-Video: [720p](https://muapi.ai/playground/seedance-2.5-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-image-to-video-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [Spicy](https://muapi.ai/playground/seedance-2.5-spicy-image-to-video?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
+  - First & Last Frame: [720p](https://muapi.ai/playground/seedance-2.5-first-last-frame?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-first-last-frame-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
+  - Omni-Reference: [720p](https://muapi.ai/playground/seedance-2.5-omni-reference?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api) · [480p](https://muapi.ai/playground/seedance-2.5-omni-reference-480p?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 - **API Provider**: [MuAPI.ai](https://muapi.ai?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)
 
 ## 📄 License
