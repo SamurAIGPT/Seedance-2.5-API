@@ -26,6 +26,8 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 - [Seedance-2-API](https://github.com/Anil-matcha/Seedance-2-API) — Python wrapper covering Seedance 2.0 and Seedance 2 Mini
 - [awesome-seedance-2.5-api-prompts](https://github.com/Anil-matcha/awesome-seedance-2.5-api-prompts) — Curated Seedance 2.5 API guide, prompts, camera controls, and video generation examples
 - [seedance2.5-comfyui](https://github.com/Anil-matcha/seedance2.5-comfyui) — Native Seedance 2.5 ComfyUI custom nodes and example workflows
+- [seedance-2.5-mcp](https://github.com/Anil-matcha/seedance-2.5-mcp) — Focused MCP server for the standard 720p and 480p Seedance 2.5 Preview routes
+- [seedance-2-mcp](https://github.com/Anil-matcha/seedance-2-mcp) — Focused MCP server for the related Seedance 2 workflows
 - [flux-3-video-api](https://github.com/SamurAIGPT/flux-3-video-api) — Python wrapper for Black Forest Labs' FLUX 3 Text-to-Video and Image-to-Video
 
 ## 🚀 Why Use Seedance 2.5 API?
