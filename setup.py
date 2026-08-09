@@ -2,9 +2,9 @@ from setuptools import setup
 
 setup(
     name="seedance-2-api",
-    version="0.2.0",
+    version="0.3.0",
     author="Anil Matcha",
-    description="Python wrapper for ByteDance's Seedance 2.5 API — realistic human faces, 1080p video, less censorship, Text-to-Video, Image-to-Video, and consistent character generation.",
+    description="Python wrapper for MuAPI's Seedance 2.5 API — 72 routes for text-to-video, image-to-video, references, video edit, video extend, and character workflows.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     py_modules=["seedance_api", "mcp_server"],

@@ -1,38 +1,142 @@
 import os
-import requests
 import time
+
+import requests
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+
 load_dotenv()
 
+
+_RESOLUTION_SUFFIXES = {
+    None: "",
+    "720p": "",
+    "480p": "-480p",
+    "1080p": "-1080p",
+    "4k": "-4k",
+}
+
+_SEEDANCE_25_FAMILIES = (
+    "text-to-video",
+    "image-to-video",
+    "first-last-frame",
+    "omni-reference",
+    "video-edit",
+    "video-extend",
+)
+
+_SEEDANCE_25_VARIANTS = ("", "intl-", "spicy-")
+
+SEEDANCE_25_ENDPOINTS = frozenset(
+    "seedance-2.5-{}{}{}".format(variant, family, suffix)
+    for variant in _SEEDANCE_25_VARIANTS
+    for family in _SEEDANCE_25_FAMILIES
+    for suffix in ("", "-480p", "-1080p", "-4k")
+)
+
+
 class SeedanceAPI:
+    """Small Python client for MuAPI's Seedance 2.5 route family."""
+
     def __init__(self, api_key=None):
         """
         Initialize the Seedance 2.5 API client.
-        :param api_key: Your MuAPI.ai API key. Defaults to MUAPI_API_KEY environment variable.
+
+        :param api_key: MuAPI API key. Defaults to MUAPI_API_KEY.
         """
         self.api_key = api_key or os.getenv("MUAPI_API_KEY")
         if not self.api_key:
-            raise ValueError("API Key is required. Set MUAPI_API_KEY in .env or pass it to the constructor.")
-        
+            raise ValueError(
+                "API Key is required. Set MUAPI_API_KEY in .env or pass it to the constructor."
+            )
+
         self.base_url = "https://api.muapi.ai/api/v1"
         self.headers = {
             "x-api-key": self.api_key,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
-    def text_to_video(self, prompt, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 Text-to-Video (T2V) generation task at 720p.
+    @staticmethod
+    def _endpoint(family, variant="standard", resolution=None):
+        """Build and validate one of the public Seedance 2.5 route slugs."""
+        if variant == "standard":
+            variant_prefix = ""
+        elif variant in ("intl", "spicy"):
+            variant_prefix = variant + "-"
+        else:
+            raise ValueError("variant must be 'standard', 'intl', or 'spicy'")
 
-        :param prompt: The text prompt describing the video.
-        :param aspect_ratio: Video aspect ratio ('16:9', '9:16', '1:1', '4:3', '3:4', '21:9', '9:21').
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
+        normalized_resolution = resolution.lower() if isinstance(resolution, str) else resolution
+        if normalized_resolution not in _RESOLUTION_SUFFIXES:
+            raise ValueError("resolution must be one of: 480p, 720p, 1080p, or 4k")
+
+        endpoint = "seedance-2.5-{}{}{}".format(
+            variant_prefix,
+            family,
+            _RESOLUTION_SUFFIXES[normalized_resolution],
+        )
+        if endpoint not in SEEDANCE_25_ENDPOINTS:
+            raise ValueError("Unsupported Seedance 2.5 endpoint: {}".format(endpoint))
+        return endpoint
+
+    @staticmethod
+    def _endpoint_kind(endpoint):
+        if endpoint.endswith("video-edit") or "video-edit-" in endpoint:
+            return "video-edit"
+        if endpoint.endswith("video-extend") or "video-extend-" in endpoint:
+            return "video-extend"
+        if endpoint.endswith("image-to-video") or "image-to-video-" in endpoint:
+            return "image-to-video"
+        if endpoint.endswith("first-last-frame") or "first-last-frame-" in endpoint:
+            return "first-last-frame"
+        if endpoint.endswith("omni-reference") or "omni-reference-" in endpoint:
+            return "omni-reference"
+        return "text-to-video"
+
+    def generate(
+        self,
+        endpoint,
+        prompt,
+        aspect_ratio="16:9",
+        duration=5,
+        seed=None,
+        image_url=None,
+        images_list=None,
+        videos_list=None,
+        audios_list=None,
+        video=None,
+        reference_images=None,
+        reference_audios=None,
+        last_image=None,
+        generate_audio=None,
+        webhook_url=None,
+    ):
         """
-        endpoint = f"{self.base_url}/seedance-2.5-text-to-video"
+        Submit a request to any current Seedance 2.5 route.
+
+        The endpoint must be one of :data:`SEEDANCE_25_ENDPOINTS`. Use the
+        workflow-specific convenience methods below when you do not need to
+        select a route dynamically.
+
+        T2V uses ``prompt``. I2V adds ``image_url``. First & Last Frame uses
+        exactly two ``images_list`` entries. Omni Reference accepts optional
+        ``images_list``, ``videos_list``, and ``audios_list``. Video Edit uses
+        ``video``, optional ``reference_images``/``reference_audios``, and
+        ``generate_audio``. Video Extend uses ``video`` and optional
+        ``last_image``.
+        """
+        if endpoint not in SEEDANCE_25_ENDPOINTS:
+            raise ValueError("Unsupported Seedance 2.5 endpoint: {}".format(endpoint))
+
+        kind = self._endpoint_kind(endpoint)
+        if kind == "image-to-video" and not image_url:
+            raise ValueError("image_url is required for Image-to-Video endpoints")
+        if kind == "first-last-frame":
+            if not images_list or len(images_list) != 2:
+                raise ValueError("images_list must contain exactly two URLs")
+        if kind in ("video-edit", "video-extend") and not video:
+            raise ValueError("video is required for video edit and extend endpoints")
+
         payload = {
             "prompt": prompt,
             "aspect_ratio": aspect_ratio,
@@ -40,226 +144,319 @@ class SeedanceAPI:
         }
         if seed is not None:
             payload["seed"] = seed
-        return self._post_request(endpoint, payload)
+        if webhook_url is not None:
+            payload["webhook_url"] = webhook_url
 
-    def image_to_video(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 Image-to-Video (I2V) generation task at 720p.
-
-        :param prompt: Text prompt to guide the animation.
-        :param image_url: URL of the single image to animate.
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-image-to-video"
-        payload = {
-            "prompt": prompt,
-            "image_url": image_url,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
-
-    def spicy_text_to_video(self, prompt, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 Spicy Text-to-Video generation task at 720p.
-
-        Spicy is the relaxed-moderation sibling of the flagship T2V model — same
-        720p pipeline and pricing, more permissive content policy. No 480p tier.
-
-        :param prompt: The text prompt describing the video.
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-spicy-text-to-video"
-        payload = {
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
-
-    def spicy_image_to_video(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 Spicy Image-to-Video generation task at 720p.
-
-        Spicy is the relaxed-moderation sibling of the flagship I2V model — same
-        720p pipeline and pricing, more permissive content policy. No 480p tier.
-
-        :param prompt: Text prompt to guide the animation.
-        :param image_url: URL of the single image to animate.
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-spicy-image-to-video"
-        payload = {
-            "prompt": prompt,
-            "image_url": image_url,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
-
-    def first_last_frame(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 First & Last Frame generation task at 720p.
-
-        Generates a smooth keyframe-driven transition between a start and end image.
-
-        :param prompt: Text prompt describing the desired transition/motion.
-        :param images_list: Exactly two image URLs, in order: [first_frame_url, last_frame_url].
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-first-last-frame"
-        payload = {
-            "prompt": prompt,
-            "images_list": images_list,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
-
-    def omni_reference(self, prompt, aspect_ratio="16:9", duration=5,
-                        images_list=None, videos_list=None, audios_list=None, seed=None):
-        """
-        Submits a Seedance 2.5 Omni-Reference generation task at 720p.
-
-        Omni-Reference blends any combination of image, video, and audio references
-        into a single guided generation — images steer environment/style, videos steer
-        camera motion/rhythm, audio steers mood.
-
-        :param prompt: Text prompt describing the video, referencing the provided assets.
-        :param aspect_ratio: Video aspect ratio (e.g., '16:9', '9:16').
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param images_list: Optional list of up to 20 reference image URLs.
-        :param videos_list: Optional list of up to 6 reference video URLs.
-        :param audios_list: Optional list of up to 6 reference audio URLs.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response with request_id.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-omni-reference"
-        payload = {
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if images_list:
+        if kind == "image-to-video":
+            payload["image_url"] = image_url
+        elif kind == "first-last-frame":
             payload["images_list"] = images_list
-        if videos_list:
-            payload["videos_list"] = videos_list
-        if audios_list:
-            payload["audios_list"] = audios_list
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
+        elif kind == "omni-reference":
+            if images_list:
+                payload["images_list"] = images_list
+            if videos_list:
+                payload["videos_list"] = videos_list
+            if audios_list:
+                payload["audios_list"] = audios_list
+        elif kind == "video-edit":
+            payload["video"] = video
+            if reference_images:
+                payload["reference_images"] = reference_images
+            if reference_audios:
+                payload["reference_audios"] = reference_audios
+            if generate_audio is not None:
+                payload["generate_audio"] = generate_audio
+        elif kind == "video-extend":
+            payload["video"] = video
+            if last_image:
+                payload["last_image"] = last_image
+            if generate_audio is not None:
+                payload["generate_audio"] = generate_audio
 
+        return self._post_request("{}/{}".format(self.base_url, endpoint), payload)
+
+    # ------------------------------------------------------------------
+    # Text-to-video
+    # ------------------------------------------------------------------
+    def text_to_video(
+        self,
+        prompt,
+        aspect_ratio="16:9",
+        duration=5,
+        seed=None,
+        variant="standard",
+        resolution=None,
+    ):
+        """Generate a Seedance 2.5 text-to-video clip."""
+        return self.generate(
+            self._endpoint("text-to-video", variant, resolution),
+            prompt,
+            aspect_ratio=aspect_ratio,
+            duration=duration,
+            seed=seed,
+        )
+
+    def text_to_video_480p(self, prompt, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate a 480p text-to-video clip."""
+        return self.text_to_video(prompt, aspect_ratio, duration, seed, variant, "480p")
+
+    def text_to_video_1080p(self, prompt, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate an upscaled 1080p text-to-video clip."""
+        return self.text_to_video(prompt, aspect_ratio, duration, seed, variant, "1080p")
+
+    def text_to_video_4k(self, prompt, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate an upscaled 4K text-to-video clip."""
+        return self.text_to_video(prompt, aspect_ratio, duration, seed, variant, "4k")
+
+    def intl_text_to_video(self, prompt, aspect_ratio="16:9", duration=5, seed=None, resolution=None):
+        """Generate through the international Seedance 2.5 text-to-video route."""
+        return self.text_to_video(prompt, aspect_ratio, duration, seed, "intl", resolution)
+
+    def spicy_text_to_video(self, prompt, aspect_ratio="16:9", duration=5, seed=None, resolution=None):
+        """Generate through the Spicy Seedance 2.5 text-to-video route."""
+        return self.text_to_video(prompt, aspect_ratio, duration, seed, "spicy", resolution)
+
+    # ------------------------------------------------------------------
+    # Image-to-video
+    # ------------------------------------------------------------------
+    def image_to_video(
+        self,
+        prompt,
+        image_url,
+        aspect_ratio="16:9",
+        duration=5,
+        seed=None,
+        variant="standard",
+        resolution=None,
+    ):
+        """Animate one image into a Seedance 2.5 video clip."""
+        return self.generate(
+            self._endpoint("image-to-video", variant, resolution),
+            prompt,
+            aspect_ratio=aspect_ratio,
+            duration=duration,
+            seed=seed,
+            image_url=image_url,
+        )
+
+    def image_to_video_480p(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate a 480p image-to-video clip."""
+        return self.image_to_video(prompt, image_url, aspect_ratio, duration, seed, variant, "480p")
+
+    def image_to_video_1080p(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate an upscaled 1080p image-to-video clip."""
+        return self.image_to_video(prompt, image_url, aspect_ratio, duration, seed, variant, "1080p")
+
+    def image_to_video_4k(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate an upscaled 4K image-to-video clip."""
+        return self.image_to_video(prompt, image_url, aspect_ratio, duration, seed, variant, "4k")
+
+    def intl_image_to_video(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None, resolution=None):
+        """Generate through the international Seedance 2.5 image-to-video route."""
+        return self.image_to_video(prompt, image_url, aspect_ratio, duration, seed, "intl", resolution)
+
+    def spicy_image_to_video(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None, resolution=None):
+        """Generate through the Spicy Seedance 2.5 image-to-video route."""
+        return self.image_to_video(prompt, image_url, aspect_ratio, duration, seed, "spicy", resolution)
+
+    # ------------------------------------------------------------------
+    # First & Last Frame
+    # ------------------------------------------------------------------
+    def first_last_frame(
+        self,
+        prompt,
+        images_list,
+        aspect_ratio="16:9",
+        duration=5,
+        seed=None,
+        variant="standard",
+        resolution=None,
+    ):
+        """Generate a transition between exactly two keyframe images."""
+        return self.generate(
+            self._endpoint("first-last-frame", variant, resolution),
+            prompt,
+            aspect_ratio=aspect_ratio,
+            duration=duration,
+            seed=seed,
+            images_list=images_list,
+        )
+
+    def first_last_frame_480p(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate a 480p First & Last Frame transition."""
+        return self.first_last_frame(prompt, images_list, aspect_ratio, duration, seed, variant, "480p")
+
+    def first_last_frame_1080p(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate an upscaled 1080p First & Last Frame transition."""
+        return self.first_last_frame(prompt, images_list, aspect_ratio, duration, seed, variant, "1080p")
+
+    def first_last_frame_4k(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None, variant="standard"):
+        """Generate an upscaled 4K First & Last Frame transition."""
+        return self.first_last_frame(prompt, images_list, aspect_ratio, duration, seed, variant, "4k")
+
+    def intl_first_last_frame(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None, resolution=None):
+        """Generate through the international First & Last Frame route."""
+        return self.first_last_frame(prompt, images_list, aspect_ratio, duration, seed, "intl", resolution)
+
+    def spicy_first_last_frame(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None, resolution=None):
+        """Generate through the Spicy First & Last Frame route."""
+        return self.first_last_frame(prompt, images_list, aspect_ratio, duration, seed, "spicy", resolution)
+
+    # ------------------------------------------------------------------
+    # Omni Reference
+    # ------------------------------------------------------------------
+    def omni_reference(
+        self,
+        prompt,
+        aspect_ratio="16:9",
+        duration=5,
+        images_list=None,
+        videos_list=None,
+        audios_list=None,
+        seed=None,
+        variant="standard",
+        resolution=None,
+    ):
+        """Generate from optional image, video, and audio references."""
+        return self.generate(
+            self._endpoint("omni-reference", variant, resolution),
+            prompt,
+            aspect_ratio=aspect_ratio,
+            duration=duration,
+            seed=seed,
+            images_list=images_list,
+            videos_list=videos_list,
+            audios_list=audios_list,
+        )
+
+    def omni_reference_480p(self, prompt, aspect_ratio="16:9", duration=5, images_list=None, videos_list=None, audios_list=None, seed=None, variant="standard"):
+        """Generate a 480p Omni Reference clip."""
+        return self.omni_reference(prompt, aspect_ratio, duration, images_list, videos_list, audios_list, seed, variant, "480p")
+
+    def omni_reference_1080p(self, prompt, aspect_ratio="16:9", duration=5, images_list=None, videos_list=None, audios_list=None, seed=None, variant="standard"):
+        """Generate an upscaled 1080p Omni Reference clip."""
+        return self.omni_reference(prompt, aspect_ratio, duration, images_list, videos_list, audios_list, seed, variant, "1080p")
+
+    def omni_reference_4k(self, prompt, aspect_ratio="16:9", duration=5, images_list=None, videos_list=None, audios_list=None, seed=None, variant="standard"):
+        """Generate an upscaled 4K Omni Reference clip."""
+        return self.omni_reference(prompt, aspect_ratio, duration, images_list, videos_list, audios_list, seed, variant, "4k")
+
+    def intl_omni_reference(self, prompt, aspect_ratio="16:9", duration=5, images_list=None, videos_list=None, audios_list=None, seed=None, resolution=None):
+        """Generate through the international Omni Reference route."""
+        return self.omni_reference(prompt, aspect_ratio, duration, images_list, videos_list, audios_list, seed, "intl", resolution)
+
+    def spicy_omni_reference(self, prompt, aspect_ratio="16:9", duration=5, images_list=None, videos_list=None, audios_list=None, seed=None, resolution=None):
+        """Generate through the Spicy Omni Reference route."""
+        return self.omni_reference(prompt, aspect_ratio, duration, images_list, videos_list, audios_list, seed, "spicy", resolution)
+
+    # ------------------------------------------------------------------
+    # Video edit and extend
+    # ------------------------------------------------------------------
+    def video_edit(
+        self,
+        prompt,
+        video,
+        reference_images=None,
+        reference_audios=None,
+        aspect_ratio="16:9",
+        duration=5,
+        generate_audio=True,
+        seed=None,
+        variant="standard",
+        resolution=None,
+    ):
+        """Edit an existing video through a Seedance 2.5 Video Edit route."""
+        return self.generate(
+            self._endpoint("video-edit", variant, resolution),
+            prompt,
+            aspect_ratio=aspect_ratio,
+            duration=duration,
+            seed=seed,
+            video=video,
+            reference_images=reference_images,
+            reference_audios=reference_audios,
+            generate_audio=generate_audio,
+        )
+
+    def video_edit_480p(self, prompt, video, reference_images=None, reference_audios=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, variant="standard"):
+        """Edit a video at 480p."""
+        return self.video_edit(prompt, video, reference_images, reference_audios, aspect_ratio, duration, generate_audio, seed, variant, "480p")
+
+    def video_edit_1080p(self, prompt, video, reference_images=None, reference_audios=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, variant="standard"):
+        """Edit a video at upscaled 1080p."""
+        return self.video_edit(prompt, video, reference_images, reference_audios, aspect_ratio, duration, generate_audio, seed, variant, "1080p")
+
+    def video_edit_4k(self, prompt, video, reference_images=None, reference_audios=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, variant="standard"):
+        """Edit a video at upscaled 4K."""
+        return self.video_edit(prompt, video, reference_images, reference_audios, aspect_ratio, duration, generate_audio, seed, variant, "4k")
+
+    def intl_video_edit(self, prompt, video, reference_images=None, reference_audios=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, resolution=None):
+        """Edit a video through the international Seedance 2.5 route."""
+        return self.video_edit(prompt, video, reference_images, reference_audios, aspect_ratio, duration, generate_audio, seed, "intl", resolution)
+
+    def spicy_video_edit(self, prompt, video, reference_images=None, reference_audios=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, resolution=None):
+        """Edit a video through the Spicy Seedance 2.5 route."""
+        return self.video_edit(prompt, video, reference_images, reference_audios, aspect_ratio, duration, generate_audio, seed, "spicy", resolution)
+
+    def video_extend(
+        self,
+        prompt,
+        video,
+        last_image=None,
+        aspect_ratio="16:9",
+        duration=5,
+        generate_audio=True,
+        seed=None,
+        variant="standard",
+        resolution=None,
+    ):
+        """Continue an existing video from its final frame."""
+        return self.generate(
+            self._endpoint("video-extend", variant, resolution),
+            prompt,
+            aspect_ratio=aspect_ratio,
+            duration=duration,
+            seed=seed,
+            video=video,
+            last_image=last_image,
+            generate_audio=generate_audio,
+        )
+
+    def video_extend_480p(self, prompt, video, last_image=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, variant="standard"):
+        """Continue a video at 480p."""
+        return self.video_extend(prompt, video, last_image, aspect_ratio, duration, generate_audio, seed, variant, "480p")
+
+    def video_extend_1080p(self, prompt, video, last_image=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, variant="standard"):
+        """Continue a video at upscaled 1080p."""
+        return self.video_extend(prompt, video, last_image, aspect_ratio, duration, generate_audio, seed, variant, "1080p")
+
+    def video_extend_4k(self, prompt, video, last_image=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, variant="standard"):
+        """Continue a video at upscaled 4K."""
+        return self.video_extend(prompt, video, last_image, aspect_ratio, duration, generate_audio, seed, variant, "4k")
+
+    def intl_video_extend(self, prompt, video, last_image=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, resolution=None):
+        """Continue a video through the international Seedance 2.5 route."""
+        return self.video_extend(prompt, video, last_image, aspect_ratio, duration, generate_audio, seed, "intl", resolution)
+
+    def spicy_video_extend(self, prompt, video, last_image=None, aspect_ratio="16:9", duration=5, generate_audio=True, seed=None, resolution=None):
+        """Continue a video through the Spicy Seedance 2.5 route."""
+        return self.video_extend(prompt, video, last_image, aspect_ratio, duration, generate_audio, seed, "spicy", resolution)
+
+    # ------------------------------------------------------------------
+    # Character and utility endpoints
+    # ------------------------------------------------------------------
     def create_character(self, images_list, outfit_description, character_name=None):
-        """
-        Creates a reusable fictional character sheet from reference photos.
-
-        Upload 1–3 images of a real person along with an outfit/style description.
-        The API renders a structured character sheet (front, back, side profile, action pose,
-        facial expressions, accessories) at 4K / 21:9 and returns a request_id.
-
-        Once completed, pass the sheet URL into consistent_video() to anchor
-        an Omni-Reference generation on this character's identity.
-
-        :param images_list: List of 1–3 image URLs of the reference person
-                            (clear, well-lit frontal/3/4-angle shots work best).
-        :param outfit_description: Description of the desired outfit/style for the character.
-        :param character_name: Optional display name for the character.
-        :return: JSON response with request_id. Poll wait_for_completion() before use.
-
-        Example workflow::
-
-            # Step 1 — create the character
-            char = api.create_character(
-                images_list=["https://example.com/person.jpg"],
-                outfit_description="cyberpunk jacket with neon accents",
-            )
-            char_id = char["request_id"]
-            sheet_result = api.wait_for_completion(char_id)
-            sheet_url = sheet_result["outputs"][0]   # character sheet image URL
-
-            # Step 2 — anchor a generation on the sheet via consistent_video()
-            video = api.consistent_video(
-                sheet_url=sheet_url,
-                prompt="The character rides a motorcycle through a neon-lit city at night",
-                aspect_ratio="16:9",
-                duration=5,
-            )
-            result = api.wait_for_completion(video["request_id"])
-            print(result["outputs"][0])
-        """
-        endpoint = f"{self.base_url}/seedance-2-character"
-        payload = {
-            "images_list": images_list,
-            "prompt": outfit_description,
-        }
+        """Create a reusable character sheet from one to three reference photos."""
+        payload = {"images_list": images_list, "prompt": outfit_description}
         if character_name:
             payload["character_name"] = character_name
-        return self._post_request(endpoint, payload)
+        return self._post_request("{}/seedance-2-character".format(self.base_url), payload)
 
     def consistent_video(self, sheet_url, prompt, aspect_ratio="16:9", duration=5, extra_images=None):
-        """
-        Generate a video with consistent character identity by anchoring on a
-        character sheet produced by create_character().
-
-        Uses the Omni-Reference endpoint (not Image-to-Video, which only accepts a
-        single image) so the character sheet and any extra scene images can be passed
-        together as reference images.
-
-        :param sheet_url: URL of the character sheet image (from wait_for_completion()
-                          on a create_character() request — ``result["outputs"][0]``).
-        :param prompt: Scene description referencing the character and any extra images.
-                       Example: ``"The character from the reference images draws their
-                       katana in slow motion, dramatic lighting"``
-        :param aspect_ratio: Video aspect ratio (16:9 / 9:16 / 1:1 / 4:3 / 3:4 / 21:9 / 9:21).
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param extra_images: Optional list of additional scene/background image URLs
-                             (up to 19 more, since the sheet takes one of the 20 slots).
-        :return: JSON response with request_id.
-
-        Example::
-
-            char = api.create_character(
-                images_list=["https://example.com/person.jpg"],
-                outfit_description="samurai armour with gold trim",
-            )
-            char_id = char["request_id"]
-            sheet_result = api.wait_for_completion(char_id)
-            sheet_url = sheet_result["outputs"][0]
-
-            video = api.consistent_video(
-                sheet_url=sheet_url,
-                prompt="The character from the reference image draws their katana in slow motion, dramatic lighting",
-                aspect_ratio="16:9",
-                duration=5,
-            )
-            result = api.wait_for_completion(video["request_id"])
-            print(result["outputs"][0])
-        """
+        """Anchor an Omni Reference generation on a character sheet image."""
         images_list = [sheet_url]
         if extra_images:
             images_list.extend(extra_images)
-
         return self.omni_reference(
             prompt=prompt,
             images_list=images_list,
@@ -267,47 +464,22 @@ class SeedanceAPI:
             duration=duration,
         )
 
-    def extend_video(self, request_id, prompt="", duration=5, quality="basic", output_format="mp4"):
-        """
-        Extends a previously generated Seedance 2.5 video.
+    def watermark_remover(self, video_url):
+        """Remove a MuAPI watermark from a Seedance video."""
+        return self._post_request(
+            "{}/seedance-2.0-watermark-remover".format(self.base_url),
+            {"video_url": video_url},
+        )
 
-        Note: there is no dedicated Seedance 2.5 extend endpoint yet — this calls the
-        Seedance 2.0 video-extend endpoint, which works on any Seedance-family request_id.
+    def watermark_remover_pro(self, video_url):
+        """Remove a MuAPI watermark with the Pro remover route."""
+        return self._post_request(
+            "{}/seedance-2-video-watermark-remover-pro".format(self.base_url),
+            {"video_url": video_url},
+        )
 
-        :param request_id: The ID of the video segment to extend.
-        :param prompt: Optional text prompt for the extension.
-        :param duration: Extension duration in seconds.
-        :param output_format: 'mp4' or 'mov'.
-        :return: JSON response from the Seedance API.
-        """
-        endpoint = f"{self.base_url}/seedance-v2.0-extend"
-        payload = {
-            "request_id": request_id,
-            "prompt": prompt,
-            "duration": duration,
-            "quality": quality,
-            "output_format": output_format
-        }
-        return self._post_request(endpoint, payload)
-
-    def video_edit(self, prompt, video_urls, images_list=None, aspect_ratio="16:9", quality="basic", remove_watermark=False,
-                    output_format="mp4"):
-        """
-        Submits a Seedance 2.0 Video-Edit generation task.
-
-        Note: there is no dedicated Seedance 2.5 video-edit endpoint yet — this calls
-        the Seedance 2.0 video-edit endpoint.
-
-        :param prompt: The text prompt describing the edit.
-        :param video_urls: A list of video URLs to edit.
-        :param images_list: Optional list of image URLs.
-        :param aspect_ratio: Video aspect ratio.
-        :param quality: Output quality.
-        :param remove_watermark: Whether to remove watermark.
-        :param output_format: 'mp4' (default) or 'mov'.
-        :return: JSON response from the Seedance API.
-        """
-        endpoint = f"{self.base_url}/seedance-v2.0-video-edit"
+    def legacy_video_edit(self, prompt, video_urls, images_list=None, aspect_ratio="16:9", quality="basic", remove_watermark=False, output_format="mp4"):
+        """Call the older Seedance 2.0 video-edit route."""
         payload = {
             "prompt": prompt,
             "video_urls": video_urls,
@@ -315,278 +487,69 @@ class SeedanceAPI:
             "aspect_ratio": aspect_ratio,
             "quality": quality,
             "remove_watermark": remove_watermark,
-            "output_format": output_format
+            "output_format": output_format,
         }
-        return self._post_request(endpoint, payload)
+        return self._post_request("{}/seedance-v2.0-video-edit".format(self.base_url), payload)
 
-    def watermark_remover(self, video_url):
-        """
-        Removes watermark from a Seedance video.
-        
-        :param video_url: URL of the video to process.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.0-watermark-remover"
+    def legacy_extend_video(self, request_id, prompt="", duration=5, quality="basic", output_format="mp4"):
+        """Call the older Seedance 2.0 extension route by request ID."""
         payload = {
-            "video_url": video_url
-        }
-        return self._post_request(endpoint, payload)
-
-    def watermark_remover_pro(self, video_url):
-        """
-        Removes watermark from a Seedance video (Pro version).
-        
-        :param video_url: URL of the video to process.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2-video-watermark-remover-pro"
-        payload = {
-            "video_url": video_url
-        }
-        return self._post_request(endpoint, payload)
-
-    def text_to_video_480p(self, prompt, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 Text-to-Video (T2V) 480p task — faster/cheaper than the 720p tier.
-
-        :param prompt: Descriptive text prompt.
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-text-to-video-480p"
-        payload = {
+            "request_id": request_id,
             "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
             "duration": duration,
+            "quality": quality,
+            "output_format": output_format,
         }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
+        return self._post_request("{}/seedance-v2.0-extend".format(self.base_url), payload)
 
-    def image_to_video_480p(self, prompt, image_url, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 Image-to-Video (I2V) 480p task — faster/cheaper than the 720p tier.
+    def upload_file(self, file_path):
+        """Upload a local image or video and return its MuAPI URL."""
+        endpoint = "{}/upload_file".format(self.base_url)
+        with open(file_path, "rb") as file_data:
+            response = requests.post(
+                endpoint,
+                headers={"x-api-key": self.api_key},
+                files={"file": file_data},
+            )
+        response.raise_for_status()
+        return response.json()
 
-        :param prompt: Text prompt to guide the animation.
-        :param image_url: URL of the single image to animate.
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-image-to-video-480p"
-        payload = {
-            "prompt": prompt,
-            "image_url": image_url,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
+    def get_result(self, request_id):
+        """Read the current status/result for a submitted request."""
+        endpoint = "{}/predictions/{}/result".format(self.base_url, request_id)
+        response = requests.get(endpoint, headers=self.headers)
+        response.raise_for_status()
+        return response.json()
 
-    def first_last_frame_480p(self, prompt, images_list, aspect_ratio="16:9", duration=5, seed=None):
-        """
-        Submits a Seedance 2.5 First & Last Frame 480p task — faster/cheaper than the 720p tier.
-
-        :param prompt: Text prompt describing the desired transition/motion.
-        :param images_list: Exactly two image URLs, in order: [first_frame_url, last_frame_url].
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response from the Seedance 2.5 API.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-first-last-frame-480p"
-        payload = {
-            "prompt": prompt,
-            "images_list": images_list,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
-
-    def omni_reference_480p(self, prompt, aspect_ratio="16:9", duration=5,
-                             images_list=None, videos_list=None, audios_list=None, seed=None):
-        """
-        Submits a Seedance 2.5 Omni-Reference 480p task — faster/cheaper than the 720p tier.
-
-        :param prompt: Text prompt describing the video, referencing the provided assets.
-        :param aspect_ratio: Video aspect ratio.
-        :param duration: Video duration in seconds, 4-30. Default 5.
-        :param images_list: Optional list of up to 20 reference image URLs.
-        :param videos_list: Optional list of up to 6 reference video URLs.
-        :param audios_list: Optional list of up to 6 reference audio URLs.
-        :param seed: Optional int seed (-1 to 4294967295) for reproducible generation.
-        :return: JSON response with request_id.
-        """
-        endpoint = f"{self.base_url}/seedance-2.5-omni-reference-480p"
-        payload = {
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        if images_list:
-            payload["images_list"] = images_list
-        if videos_list:
-            payload["videos_list"] = videos_list
-        if audios_list:
-            payload["audios_list"] = audios_list
-        if seed is not None:
-            payload["seed"] = seed
-        return self._post_request(endpoint, payload)
-
-    def vip_text_to_video_1080p(self, prompt, aspect_ratio="16:9", duration=5):
-        """
-        Submits a Seedance 2 VIP Text-to-Video 1080p task (coming soon).
-
-        VIP tier — priority queue, low censorship, full 1080p output.
-
-        :param prompt: Text description of the video to generate.
-        :param aspect_ratio: Output aspect ratio (e.g. '16:9', '9:16', '1:1').
-        :param duration: Video duration in seconds (4–15).
-        :return: JSON response with request_id.
-        """
-        endpoint = f"{self.base_url}/sd-2-vip-text-to-video-1080p"
-        payload = {
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        return self._post_request(endpoint, payload)
-
-    def vip_text_to_video_fast_1080p(self, prompt, aspect_ratio="16:9", duration=5):
-        """
-        Submits a Seedance 2 VIP Text-to-Video 1080p Fast task (coming soon).
-
-        VIP fast tier — fastest 1080p text-to-video with priority queue and low censorship.
-
-        :param prompt: Text description of the video to generate.
-        :param aspect_ratio: Output aspect ratio (e.g. '16:9', '9:16', '1:1').
-        :param duration: Video duration in seconds (4–15).
-        :return: JSON response with request_id.
-        """
-        endpoint = f"{self.base_url}/sd-2-vip-text-to-video-fast-1080p"
-        payload = {
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        return self._post_request(endpoint, payload)
-
-    def vip_image_to_video_1080p(self, prompt, images_list, aspect_ratio="16:9", duration=5):
-        """
-        Submits a Seedance 2 VIP Image-to-Video 1080p task (coming soon).
-
-        VIP tier — priority queue, low censorship, full 1080p output.
-
-        :param prompt: Optional text prompt guiding the motion.
-        :param images_list: List containing the start-frame image URL.
-        :param aspect_ratio: Output aspect ratio (e.g. '16:9', '9:16', '1:1').
-        :param duration: Video duration in seconds (4–15).
-        :return: JSON response with request_id.
-        """
-        endpoint = f"{self.base_url}/sd-2-vip-image-to-video-1080p"
-        payload = {
-            "prompt": prompt,
-            "images_list": images_list,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        return self._post_request(endpoint, payload)
-
-    def vip_image_to_video_fast_1080p(self, prompt, images_list, aspect_ratio="16:9", duration=5):
-        """
-        Submits a Seedance 2 VIP Image-to-Video 1080p Fast task (coming soon).
-
-        VIP fast tier — fastest 1080p image animation with priority queue and low censorship.
-
-        :param prompt: Optional text prompt guiding the motion.
-        :param images_list: List containing the start-frame image URL.
-        :param aspect_ratio: Output aspect ratio (e.g. '16:9', '9:16', '1:1').
-        :param duration: Video duration in seconds (4–15).
-        :return: JSON response with request_id.
-        """
-        endpoint = f"{self.base_url}/sd-2-vip-image-to-video-fast-1080p"
-        payload = {
-            "prompt": prompt,
-            "images_list": images_list,
-            "aspect_ratio": aspect_ratio,
-            "duration": duration,
-        }
-        return self._post_request(endpoint, payload)
+    def wait_for_completion(self, request_id, poll_interval=5, timeout=600):
+        """Poll until a request completes or fails."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            result = self.get_result(request_id)
+            status = result.get("status")
+            if status == "completed":
+                return result
+            if status == "failed":
+                raise RuntimeError("Video generation failed: {}".format(result.get("error")))
+            time.sleep(poll_interval)
+        raise TimeoutError("Timed out waiting for video generation to complete.")
 
     def _post_request(self, endpoint, payload):
         response = requests.post(endpoint, json=payload, headers=self.headers)
         response.raise_for_status()
         return response.json()
 
-    def upload_file(self, file_path):
-        """
-        Uploads a file (image or video) to MuAPI for use in generation tasks.
-        
-        :param file_path: Path to the local file to upload.
-        :return: JSON response from the MuAPI containing the URL of the uploaded file.
-        """
-        endpoint = f"{self.base_url}/upload_file"
-        
-        # Omit Content-Type to let requests set the multipart boundary automatically
-        headers = {
-            "x-api-key": self.api_key
-        }
-        
-        with open(file_path, "rb") as file_data:
-            files = {"file": file_data}
-            response = requests.post(endpoint, headers=headers, files=files)
-            
-        response.raise_for_status()
-        return response.json()
-
-    def get_result(self, request_id):
-        """
-        Polls for the result of a generation task.
-        """
-        endpoint = f"{self.base_url}/predictions/{request_id}/result"
-        response = requests.get(endpoint, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
-
-    def wait_for_completion(self, request_id, poll_interval=5, timeout=600):
-        """
-        Waits for the video generation to complete and returns the result.
-        """
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            result = self.get_result(request_id)
-            status = result.get("status")
-            
-            if status == "completed":
-                return result
-            elif status == "failed":
-                raise Exception(f"Video generation failed: {result.get('error')}")
-            
-            print(f"Status: {status}. Waiting {poll_interval} seconds...")
-            time.sleep(poll_interval)
-        
-        raise TimeoutError("Timed out waiting for video generation to complete.")
 
 if __name__ == "__main__":
-    # Example usage for T2V
     try:
         api = SeedanceAPI()
-        prompt = "A cinematic shot of a futuristic city with neon lights, 8k resolution"
-        
-        print(f"Submitting T2V task with prompt: {prompt}")
-        submission = api.text_to_video(prompt=prompt, duration=5)
+        submission = api.text_to_video(
+            prompt="A cinematic shot of a futuristic city with neon lights",
+            duration=5,
+        )
         request_id = submission.get("request_id")
-        print(f"Task submitted. Request ID: {request_id}")
-        
-        print("Waiting for completion...")
+        print("Task submitted. Request ID: {}".format(request_id))
         result = api.wait_for_completion(request_id)
-        print(f"Generation completed! Video URL: {result.get('url')}")
-        
-    except Exception as e:
-        print(f"Error: {e}")
+        print("Generation completed: {}".format(result))
+    except Exception as exc:
+        print("Error: {}".format(exc))

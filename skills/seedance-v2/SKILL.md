@@ -1,7 +1,7 @@
 ---
 name: seedance-v2
-description: Generate cinematic, high-fidelity AI videos from text prompts and static images using Seedance 2.0 (by ByteDance).
-version: 1.0.0
+description: Generate cinematic, high-fidelity AI videos with the Seedance 2.5 API (by ByteDance) through MuAPI.
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -14,9 +14,11 @@ metadata:
     os: ["macos", "linux"]
 ---
 
-# Seedance V2
+# Seedance 2.5
 
-Seedance 2.0 is a state-of-the-art video generation model developed by ByteDance. This skill allows you to generate videos from text, animate images, and edit existing videos using natural language commands.
+Seedance 2.5 is ByteDance's high-fidelity video generation model. This skill
+supports text-to-video, image animation, keyframe transitions, multimodal
+references, video editing, video extension, and character workflows.
 
 ## Prerequisites
 
@@ -24,24 +26,31 @@ Seedance 2.0 is a state-of-the-art video generation model developed by ByteDance
 
 ## Usage Guide
 
-You can use Seedance 2.0 to create videos in various aspect ratios (16:9, 9:16, 4:3, 3:4) and durations.
+You can select standard, Intl, or Spicy route variants and 480p, 720p,
+upscaled 1080p, or upscaled 4K tiers. Durations range from 4 to 30 seconds.
 
 ### Text-to-Video (T2V)
 Generate a video from a descriptive text prompt.
 ```bash
-python3.11 skills/seedance-v2/seedance_cli.py t2v --prompt "A cinematic slow-motion shot of a cyberpunk city in the rain" --wait
+python3.11 skills/seedance-v2/seedance_cli.py t2v --prompt "A cinematic slow-motion shot of a cyberpunk city in the rain" --variant intl --resolution 1080p --wait
 ```
 
 ### Image-to-Video (I2V)
-Animate one or more static images.
+Animate one static image.
 ```bash
-python3.11 skills/seedance-v2/seedance_cli.py i2v --images "https://example.com/image.jpg" --prompt "Make the clouds move slowly" --wait
+python3.11 skills/seedance-v2/seedance_cli.py i2v --image_url "https://example.com/image.jpg" --prompt "Make the clouds move slowly" --wait
+```
+
+### First & Last Frame
+Generate a transition between exactly two images.
+```bash
+python3.11 skills/seedance-v2/seedance_cli.py first-last --images "https://example.com/start.jpg" "https://example.com/end.jpg" --prompt "Smoothly transition from day to night" --wait
 ```
 
 ### Video Rendering & Editing
 Edit an existing video or apply styles.
 ```bash
-python3.11 skills/seedance-v2/seedance_cli.py edit --videos "https://example.com/video.mp4" --prompt "Add a sunset filter" --wait
+python3.11 skills/seedance-v2/seedance_cli.py edit --video "https://example.com/video.mp4" --prompt "Turn the sunny afternoon into a rainy blue-hour scene" --wait
 ```
 
 ### Omni-Reference Generation
@@ -63,9 +72,16 @@ python3.11 skills/seedance-v2/seedance_cli.py watermark-remover --video_url "htt
 ```
 
 ### Extending Videos
-Extend a previously generated video segment.
+Continue an existing video from its final frame.
 ```bash
-python3.11 skills/seedance-v2/seedance_cli.py extend --request_id "YOUR_REQUEST_ID" --duration 5 --wait
+python3.11 skills/seedance-v2/seedance_cli.py extend --video "https://example.com/video.mp4" --prompt "Continue the camera move into the city" --wait
+```
+
+### Any route
+Use the `generate` command when you need an exact route slug, including any
+Intl or Spicy resolution variant.
+```bash
+python3.11 skills/seedance-v2/seedance_cli.py generate --endpoint seedance-2.5-spicy-video-edit-4k --video "https://example.com/video.mp4" --prompt "Change the lighting to a neon night scene" --wait
 ```
 
 ## Tips for Best Results
@@ -73,20 +89,20 @@ python3.11 skills/seedance-v2/seedance_cli.py extend --request_id "YOUR_REQUEST_
 - **Be Descriptive**: Detailed prompts result in better video quality and more accurate motion.
 - **Wait for Completion**: Use the `--wait` flag to receive the final video URL directly. Without it, you will receive a `request_id` which you can check later using the `status` command.
 - **Aspect Ratios**: Use `16:9` for horizontal videos and `9:16` for vertical content (like TikTok or Reels).
-- **Quality**: Use `--quality high` for 2K resolution.
-- **Watermarks**: Most v2.0 generation commands now support a `--remove_watermark` flag.
+- **Resolution**: Select the route tier with `--resolution`; 1080p and 4K are upscaled from the 720p base render.
+- **Variants**: Use `--variant intl` for the international route or `--variant spicy` for the relaxed-content-safety route.
 
 ## Commands Reference
 
 | Command | Arguments | Description |
 | :--- | :--- | :--- |
-| `t2v` | `--prompt`, `--aspect_ratio`, `--duration`, `--quality`, `--remove_watermark`, `--wait` | Text to Video |
-| `i2v` | `--images`, `--prompt`, `--aspect_ratio`, `--duration`, `--quality`, `--remove_watermark`, `--wait` | Image to Video |
-| `omni` | `--prompt`, `--images`, `--videos`, `--audios`, `--aspect_ratio`, `--quality`, `--wait` | Omni-Reference |
+| `t2v` | `--prompt`, `--variant`, `--resolution`, `--aspect_ratio`, `--duration`, `--seed`, `--wait` | Text to Video |
+| `i2v` | `--image_url`, `--prompt`, `--variant`, `--resolution`, `--aspect_ratio`, `--duration`, `--seed`, `--wait` | Image to Video |
+| `first-last` | `--images` (exactly 2), `--prompt`, `--variant`, `--resolution`, `--aspect_ratio`, `--duration`, `--seed`, `--wait` | First & Last Frame |
+| `omni` | `--prompt`, `--images`, `--videos`, `--audios`, `--variant`, `--resolution`, `--aspect_ratio`, `--duration`, `--seed`, `--wait` | Omni Reference |
 | `character` | `--images`, `--outfit`, `--name`, `--wait` | Create Character Sheet |
-| `edit` | `--prompt`, `--videos`, `--images`, `--aspect_ratio`, `--quality`, `--remove_watermark`, `--wait` | Video Editing |
+| `edit` | `--prompt`, `--video`, `--variant`, `--resolution`, `--reference-images`, `--reference-audios`, `--no-audio`, `--wait` | Video Edit |
 | `watermark-remover` | `--video_url`, `--wait` | Remove Watermark |
-| `t2v-480p` | `--prompt`, `--aspect_ratio`, `--duration`, `--quality`, `--wait` | Text to Video (480p) |
-| `i2v-480p` | `--images`, `--prompt`, `--aspect_ratio`, `--duration`, `--quality`, `--wait` | Image to Video (480p) |
-| `extend`| `--request_id`, `--prompt`, `--duration`, `--quality`, `--wait` | Extend Video |
+| `extend` | `--prompt`, `--video`, `--last-image`, `--variant`, `--resolution`, `--no-audio`, `--wait` | Video Extend |
+| `generate` | `--endpoint`, `--prompt`, workflow-specific input flags, `--wait` | Any current Seedance 2.5 route |
 | `status`| `--request_id` | Check Task Status |

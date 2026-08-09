@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seedance-2-api"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
   { name="Anil Matcha" },
 ]
-description = "Python wrapper for ByteDance's Seedance 2.5 API — realistic human faces, 1080p video, less censorship, Text-to-Video, Image-to-Video, and consistent character generation."
+description = "Python wrapper for MuAPI's Seedance 2.5 API — 72 routes for text-to-video, image-to-video, references, video edit, video extend, and character workflows."
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
