@@ -24,6 +24,7 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 - [seedance-2.0-watermark-remover](https://github.com/SamurAIGPT/seedance-2.0-watermark-remover) — Remove watermarks from your Seedance generated videos
 - [seedance-2-generator](https://github.com/SamurAIGPT/seedance-2-generator) — Ready-made Next.js SaaS built on Seedance 2
 - [Seedance-2-API](https://github.com/Anil-matcha/Seedance-2-API) — Python wrapper covering Seedance 2.0 and Seedance 2 Mini
+- [Seedance-3-API](https://github.com/Anil-matcha/Seedance-3-API) — companion project for the next Seedance API generation on MuAPI
 - [awesome-seedance-2.5-api-prompts](https://github.com/Anil-matcha/awesome-seedance-2.5-api-prompts) — Curated Seedance 2.5 API guide, prompts, camera controls, and video generation examples
 - [seedance2.5-comfyui](https://github.com/Anil-matcha/seedance2.5-comfyui) — Native Seedance 2.5 ComfyUI custom nodes and example workflows
 - [seedance-2.5-mcp](https://github.com/Anil-matcha/seedance-2.5-mcp) — Focused MCP server for the standard 720p and 480p Seedance 2.5 Preview routes
