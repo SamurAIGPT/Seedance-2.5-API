@@ -32,6 +32,12 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 - [seedance-2-mcp](https://github.com/Anil-matcha/seedance-2-mcp) — Focused MCP server for the related Seedance 2 workflows
 - [flux-3-video-api](https://github.com/SamurAIGPT/flux-3-video-api) — Python wrapper for Black Forest Labs' FLUX 3 Text-to-Video and Image-to-Video
 
+## Seedance 2.5 Flash API
+
+Dreamina Seedance 2.5 Flash is ByteDance's faster Seedance 2.5 tier: results close to flagship Seedance 2.5 with nearly twice the generation speed. [BytePlus announced](https://x.com/BytePlusGlobal/status/2120760891344036304) 720p text-to-video and image-to-video pricing of USD 0.152 per second (about 34% lower than Seedance 2.5) and a ModelArk API launch on November 15, 2026.
+
+Muapi's Seedance 2.5 Flash API page covers it: **[muapi.ai/seedance-2.5-flash](https://muapi.ai/seedance-2.5-flash?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)**. Seedance 2.5 Flash API access is available through one Muapi key, and the flagship Seedance 2.5 endpoints below use the same submit-and-poll flow.
+
 ## 🚀 Why Use Seedance 2.5 API?
 
 Seedance 2.5 is ByteDance's most advanced video generation model, offering unparalleled video quality and motion consistency.
