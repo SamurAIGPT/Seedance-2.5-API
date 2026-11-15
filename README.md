@@ -38,24 +38,25 @@ Join the subreddit https://www.reddit.com/r/Seedance_2_API/ for discussions on u
 
 Dreamina Seedance 2.5 Flash is ByteDance's faster Seedance 2.5 tier: results close to flagship Seedance 2.5 with nearly twice the generation speed. [BytePlus announced](https://x.com/BytePlusGlobal/status/2120760891344036304) 720p text-to-video and image-to-video pricing of USD 0.152 per second (about 34% lower than Seedance 2.5) and a ModelArk API launch on November 15, 2026.
 
-Muapi's Seedance 2.5 Flash API page covers it: **[muapi.ai/seedance-2.5-flash](https://muapi.ai/seedance-2.5-flash?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)**. Twelve Flash endpoints are live through one Muapi key: six standard and six **spicy** (relaxed content moderation), using the same submit-and-poll flow as the flagship routes below.
+Muapi's Seedance 2.5 Flash API page covers it: **[muapi.ai/seedance-2.5-flash](https://muapi.ai/seedance-2.5-flash?utm_source=github&utm_medium=readme&utm_campaign=seedance-2-5-api)**. Eighteen Flash endpoints are live through one Muapi key: six standard, six **international** (Dreamina route, `-intl-`) and six **spicy** (relaxed content moderation, `nsfw-seedance-2-5-flash`), using the same submit-and-poll flow as the flagship routes below.
 
-| Mode | Standard | Spicy |
-|---|---|---|
-| Text-to-Video | `seedance-2.5-flash-text-to-video` | `seedance-2.5-flash-spicy-text-to-video` |
-| Image-to-Video | `seedance-2.5-flash-image-to-video` | `seedance-2.5-flash-spicy-image-to-video` |
-| First & Last Frame | `seedance-2.5-flash-first-last-frame` | `seedance-2.5-flash-spicy-first-last-frame` |
-| Reference-to-Video (10 images / 5 videos / 5 audios) | `seedance-2.5-flash-reference-to-video` | `seedance-2.5-flash-spicy-reference-to-video` |
-| Video Edit | `seedance-2.5-flash-video-edit` | `seedance-2.5-flash-spicy-video-edit` |
-| Video Extend | `seedance-2.5-flash-video-extend` | `seedance-2.5-flash-spicy-video-extend` |
+| Mode | Standard | International | Spicy |
+|---|---|---|---|
+| Text-to-Video | `seedance-2.5-flash-text-to-video` | `seedance-2.5-flash-intl-text-to-video` | `seedance-2.5-flash-spicy-text-to-video` |
+| Image-to-Video | `seedance-2.5-flash-image-to-video` | `seedance-2.5-flash-intl-image-to-video` | `seedance-2.5-flash-spicy-image-to-video` |
+| First & Last Frame | `seedance-2.5-flash-first-last-frame` | `seedance-2.5-flash-intl-first-last-frame` | `seedance-2.5-flash-spicy-first-last-frame` |
+| Reference-to-Video (10 images / 5 videos / 5 audios) | `seedance-2.5-flash-reference-to-video` | `seedance-2.5-flash-intl-reference-to-video` | `seedance-2.5-flash-spicy-reference-to-video` |
+| Video Edit | `seedance-2.5-flash-video-edit` | `seedance-2.5-flash-intl-video-edit` | `seedance-2.5-flash-spicy-video-edit` |
+| Video Extend | `seedance-2.5-flash-video-extend` | `seedance-2.5-flash-intl-video-extend` | `seedance-2.5-flash-spicy-video-extend` |
 
-Flash outputs 480p or 720p, 4-30 seconds with native audio. Pricing on Muapi: `$0.114/sec` (480p) and `$0.228/sec` (720p), 33% below Seedance 2.5; spicy is `$0.1254/sec` and `$0.2508/sec` (33% below spicy Seedance 2.5). Edit and extend bill output plus source-video seconds at 65% of that rate. Use flagship Seedance 2.5 for 1080p and 4K.
+Flash outputs 480p or 720p, 4-30 seconds with native audio. Pricing on Muapi: `$0.114/sec` (480p) and `$0.228/sec` (720p), 33% below Seedance 2.5; international and spicy are `$0.1254/sec` and `$0.2508/sec` (Flash +10%, 33% below the matching Seedance 2.5 tier). Edit and extend bill output plus source-video seconds at 65% of that rate. Use flagship Seedance 2.5 for 1080p and 4K.
 
 ```python
 from seedance_api import SeedanceAPI
 
 api = SeedanceAPI()
 job = api.flash_text_to_video("A cat slowly blinks, static camera", resolution="480p", duration=4)
+intl = api.flash_image_to_video("Slow push-in", "https://example.com/a.jpg", intl=True, resolution="720p")
 spicy = api.flash_image_to_video("Slow push-in", "https://example.com/a.jpg", spicy=True, resolution="720p")
 ```
 
