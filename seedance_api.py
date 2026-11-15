@@ -34,6 +34,14 @@ SEEDANCE_25_ENDPOINTS = frozenset(
     for suffix in ("", "-480p", "-1080p", "-4k")
 )
 
+_FLASH_MODES = ("text-to-video", "image-to-video", "first-last-frame", "reference-to-video", "video-edit", "video-extend")
+
+SEEDANCE_25_FLASH_ENDPOINTS = frozenset(
+    "seedance-2.5-flash-{}{}".format(prefix, mode)
+    for prefix in ("", "spicy-")
+    for mode in _FLASH_MODES
+)
+
 
 class SeedanceAPI:
     """Small Python client for MuAPI's Seedance 2.5 route family."""
@@ -174,6 +182,52 @@ class SeedanceAPI:
                 payload["generate_audio"] = generate_audio
 
         return self._post_request("{}/{}".format(self.base_url, endpoint), payload)
+
+    # ------------------------------------------------------------------
+    # Seedance 2.5 Flash (480p/720p, 4-30s, $0.114/s and $0.228/s; spicy +10%)
+    # ------------------------------------------------------------------
+    def flash(self, mode, prompt, spicy=False, **fields):
+        """
+        Submit a Seedance 2.5 Flash job.
+
+        :param mode: one of text-to-video, image-to-video, first-last-frame,
+            reference-to-video, video-edit, video-extend.
+        :param spicy: use the relaxed-moderation ``seedance-2.5-flash-spicy-*`` route.
+        :param fields: endpoint fields: ``resolution`` (480p/720p), ``duration`` (4-30),
+            ``aspect_ratio``, ``generate_audio``, ``seed``, ``image_url``, ``images_list``,
+            ``videos_list``, ``audios_list``, ``video_url``.
+        """
+        if mode not in _FLASH_MODES:
+            raise ValueError("mode must be one of: {}".format(", ".join(_FLASH_MODES)))
+        endpoint = "seedance-2.5-flash-{}{}".format("spicy-" if spicy else "", mode)
+        payload = {"prompt": prompt}
+        payload.update({k: v for k, v in fields.items() if v is not None})
+        return self._post_request("{}/{}".format(self.base_url, endpoint), payload)
+
+    def flash_text_to_video(self, prompt, spicy=False, **fields):
+        """Seedance 2.5 Flash text-to-video."""
+        return self.flash("text-to-video", prompt, spicy, **fields)
+
+    def flash_image_to_video(self, prompt, image_url, spicy=False, **fields):
+        """Seedance 2.5 Flash image-to-video."""
+        return self.flash("image-to-video", prompt, spicy, image_url=image_url, **fields)
+
+    def flash_first_last_frame(self, prompt, images_list, spicy=False, **fields):
+        """Seedance 2.5 Flash first & last frame (exactly two image URLs)."""
+        return self.flash("first-last-frame", prompt, spicy, images_list=images_list, **fields)
+
+    def flash_reference_to_video(self, prompt, images_list=None, videos_list=None, audios_list=None, spicy=False, **fields):
+        """Seedance 2.5 Flash reference-to-video (up to 10 images, 5 videos, 5 audios)."""
+        return self.flash("reference-to-video", prompt, spicy, images_list=images_list,
+                          videos_list=videos_list, audios_list=audios_list, **fields)
+
+    def flash_video_edit(self, prompt, video_url, spicy=False, **fields):
+        """Seedance 2.5 Flash video edit (output keeps the source length)."""
+        return self.flash("video-edit", prompt, spicy, video_url=video_url, **fields)
+
+    def flash_video_extend(self, prompt, video_url, spicy=False, **fields):
+        """Seedance 2.5 Flash video extend (``duration`` = seconds to add, 4-30)."""
+        return self.flash("video-extend", prompt, spicy, video_url=video_url, **fields)
 
     # ------------------------------------------------------------------
     # Text-to-video
