@@ -49,7 +49,7 @@ Muapi's Seedance 2.5 Flash API page covers it: **[muapi.ai/seedance-2.5-flash](h
 | Video Edit | `seedance-2.5-flash-video-edit` | `seedance-2.5-flash-spicy-video-edit` |
 | Video Extend | `seedance-2.5-flash-video-extend` | `seedance-2.5-flash-spicy-video-extend` |
 
-Flash outputs 480p or 720p, 4-30 seconds with native audio. Pricing on Muapi: `$0.114/sec` (480p) and `$0.228/sec` (720p), 33% below Seedance 2.5; spicy is `$0.1254/sec` and `$0.2508/sec`. Edit and extend bill output plus source-video seconds at 65% of that rate. Use flagship Seedance 2.5 for 1080p and 4K.
+Flash outputs 480p or 720p, 4-30 seconds with native audio. Pricing on Muapi: `$0.114/sec` (480p) and `$0.228/sec` (720p), 33% below Seedance 2.5; spicy is `$0.1254/sec` and `$0.2508/sec` (33% below spicy Seedance 2.5). Edit and extend bill output plus source-video seconds at 65% of that rate. Use flagship Seedance 2.5 for 1080p and 4K.
 
 ```python
 from seedance_api import SeedanceAPI
