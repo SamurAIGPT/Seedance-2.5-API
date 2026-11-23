@@ -43,14 +43,21 @@ SEEDANCE_25_FLASH_ENDPOINTS = frozenset(
 )
 
 
+def _is_transient_status(response):
+    """True for HTTP responses worth retrying while polling (429 and 5xx)."""
+    return response is not None and (response.status_code == 429 or response.status_code >= 500)
+
+
 class SeedanceAPI:
     """Small Python client for MuAPI's Seedance 2.5 route family."""
 
-    def __init__(self, api_key=None):
+    def __init__(self, api_key=None, timeout=60, upload_timeout=300):
         """
         Initialize the Seedance 2.5 API client.
 
         :param api_key: MuAPI API key. Defaults to MUAPI_API_KEY.
+        :param timeout: seconds to wait on each API request before giving up.
+        :param upload_timeout: seconds to wait on a file upload.
         """
         self.api_key = api_key or os.getenv("MUAPI_API_KEY")
         if not self.api_key:
@@ -58,6 +65,8 @@ class SeedanceAPI:
                 "API Key is required. Set MUAPI_API_KEY in .env or pass it to the constructor."
             )
 
+        self.timeout = timeout
+        self.upload_timeout = upload_timeout
         self.base_url = "https://api.muapi.ai/api/v1"
         self.headers = {
             "x-api-key": self.api_key,
@@ -567,6 +576,7 @@ class SeedanceAPI:
                 endpoint,
                 headers={"x-api-key": self.api_key},
                 files={"file": file_data},
+                timeout=self.upload_timeout,
             )
         response.raise_for_status()
         return response.json()
@@ -574,15 +584,33 @@ class SeedanceAPI:
     def get_result(self, request_id):
         """Read the current status/result for a submitted request."""
         endpoint = "{}/predictions/{}/result".format(self.base_url, request_id)
-        response = requests.get(endpoint, headers=self.headers)
+        response = requests.get(endpoint, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
         return response.json()
 
-    def wait_for_completion(self, request_id, poll_interval=5, timeout=600):
-        """Poll until a request completes or fails."""
+    def wait_for_completion(self, request_id, poll_interval=5, timeout=600, max_consecutive_errors=5):
+        """
+        Poll until a request completes or fails.
+
+        Transient errors while polling (timeouts, dropped connections, HTTP 429
+        and 5xx) are retried; polling gives up only after
+        ``max_consecutive_errors`` of them in a row. Other HTTP errors, such as
+        401 or 404, are raised immediately.
+        """
         start_time = time.time()
+        consecutive_errors = 0
         while time.time() - start_time < timeout:
-            result = self.get_result(request_id)
+            try:
+                result = self.get_result(request_id)
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as exc:
+                if isinstance(exc, requests.HTTPError) and not _is_transient_status(exc.response):
+                    raise
+                consecutive_errors += 1
+                if consecutive_errors >= max_consecutive_errors:
+                    raise
+                time.sleep(min(poll_interval * 2 ** consecutive_errors, 60))
+                continue
+            consecutive_errors = 0
             status = result.get("status")
             if status == "completed":
                 return result
@@ -592,7 +620,7 @@ class SeedanceAPI:
         raise TimeoutError("Timed out waiting for video generation to complete.")
 
     def _post_request(self, endpoint, payload):
-        response = requests.post(endpoint, json=payload, headers=self.headers)
+        response = requests.post(endpoint, json=payload, headers=self.headers, timeout=self.timeout)
         response.raise_for_status()
         return response.json()
 

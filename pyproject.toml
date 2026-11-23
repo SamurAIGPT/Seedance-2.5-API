@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "requests",
     "python-dotenv",
-    "mcp[cli]"
+    "mcp[cli]<2"
 ]
 
 [tool.setuptools]
