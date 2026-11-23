@@ -11,7 +11,7 @@ setup(
     install_requires=[
         "requests",
         "python-dotenv",
-        "mcp[cli]"
+        "mcp[cli]<2"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
